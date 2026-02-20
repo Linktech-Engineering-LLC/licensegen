@@ -1,7 +1,7 @@
 # 📘 **licensegen — Vendor‑Side License Generator (Rust)**
 
-`licensegen` is the upcoming vendor‑side license generator for Linktech Engineering LLC.  
-It is designed to produce signed, tamper‑evident license payloads for commercial applications, including BotScanner and future Linktech products.
+`licensegen` is the vendor‑side license generator for Linktech Engineering LLC.  
+It produces signed, tamper‑evident license payloads for commercial applications, including BotScanner and future Linktech products.
 
 This repository serves as the public home for the project as development progresses.
 
@@ -9,16 +9,18 @@ This repository serves as the public home for the project as development progres
 
 ## 🔍 **Overview**
 
-`licensegen` will provide a deterministic, offline‑capable workflow for generating and validating software licenses.  
-The tool is being built with a focus on:
+`licensegen` provides a deterministic, offline‑capable workflow for generating and validating software licenses.  
+It is designed with a strong emphasis on:
 
 - **Security** — cryptographic signing and verification  
 - **Determinism** — reproducible outputs for audit transparency  
 - **Offline operation** — no external dependencies required  
 - **Vendor‑side control** — all sensitive operations remain with the publisher  
-- **Clear separation of concerns** — crypto, models, storage, and CLI kept cleanly isolated  
+- **Structured logging** — consistent, audit‑friendly logs  
+- **Database support** — optional MariaDB integration for vendor‑side tracking  
+- **Clean separation of concerns** — crypto, models, storage, and CLI kept isolated  
 
-The project is implemented in **Rust** to ensure safety, performance, and long‑term maintainability.
+The project is implemented in **Rust** for safety, performance, and long‑term maintainability.
 
 ---
 
@@ -38,6 +40,52 @@ The initial release of `licensegen` is expected to include:
 - Clean, predictable CLI commands  
 
 Additional features will be documented as the project evolves.
+
+---
+
+## 🗺️ **Roadmap**
+
+### **Phase 1 — Foundations**
+- Project scaffolding  
+- RSA keypair generation  
+- Basic CLI structure  
+- Logging framework  
+- YAML request parsing  
+
+### **Phase 2 — License Engine**
+- License model implementation  
+- JSON schema validation  
+- Signing and verification  
+- Deterministic output guarantees  
+
+### **Phase 3 — Database Integration**
+- MariaDB schema  
+- Vendor‑side license tracking  
+- Optional database population  
+
+### **Phase 4 — Release Preparation**
+- Documentation  
+- Examples  
+- Packaging  
+- v0.1.0 release  
+
+---
+
+## 🎯 **Milestone: v0.1.0 (Initial Release)**
+
+The first public milestone will include:
+
+- RSA keypair generation  
+- License creation and validation  
+- YAML‑driven request workflow  
+- JSON‑schema‑based license structure  
+- Structured logging  
+- Optional MariaDB support  
+- Deterministic output guarantees  
+- Basic CLI commands  
+
+This milestone establishes the foundation for future expansion and integration with Linktech Engineering products.
+
 ---
 
 ## 📦 **Project Status**
