@@ -31,12 +31,13 @@ The initial release of `licensegen` is expected to include:
 - License validation  
 - Product and edition modeling  
 - JSON‑schema‑driven license structure  
+- **MariaDB support for vendor‑side license tracking**  
+- **Structured logging for audit‑transparent operation**  
 - Optional vendor‑side database population  
 - Support for long‑term key rotation  
 - Clean, predictable CLI commands  
 
 Additional features will be documented as the project evolves.
-
 ---
 
 ## 📦 **Project Status**
