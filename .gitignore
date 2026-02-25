@@ -43,3 +43,6 @@ data/keys/*.pem
 vault.yml
 password
 password_file
+
+# Subversion stuff
+.svn/
