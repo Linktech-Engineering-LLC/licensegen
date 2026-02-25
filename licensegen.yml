@@ -1,0 +1,9 @@
+vault:
+  file: /home/doug/ansible/vault.yml
+  password_file: /home/doug/.ansible/password
+
+paths:
+  products_dir: data/products
+  application_file: data/license.yml
+  keypair_dir: data/keys
+  output_dir: data/products
