@@ -1,0 +1,21 @@
+| CREATE TABLE IF NOT EXISTS `licenses` (
+  `id` bigint(20) unsigned NOT NULL,
+  `application_id` bigint(20) unsigned NOT NULL,
+  `edition_id` bigint(20) unsigned NOT NULL,
+  `version` varchar(5) DEFAULT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`payload`)),
+  `features` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`features`)),
+  `signature` text NOT NULL,
+  `issued` datetime NOT NULL,
+  `expires` datetime DEFAULT NULL,
+  `revoked` tinyint(1) unsigned NOT NULL,
+  `created` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `FK_LicApp` (`application_id`) USING BTREE,
+  KEY `FK_LicEd` (`edition_id`) USING BTREE,
+  KEY `issued` (`issued`),
+  KEY `expires` (`expires`),
+  CONSTRAINT `FK_LicApp` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `FK_LicEdit` FOREIGN KEY (`edition_id`) REFERENCES `editions` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |
