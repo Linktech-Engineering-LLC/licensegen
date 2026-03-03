@@ -3,16 +3,10 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-01
+// Modified: 2026-03-03
 // Description: Entry point for licensegen.
 // ============================================================================
-// Declare modules
-mod config;
-mod db;
-mod logger_init;
-mod product;
-mod signing;
-mod vault;
+
 // System Libraries
 use std::path::PathBuf;
 // User Libraries

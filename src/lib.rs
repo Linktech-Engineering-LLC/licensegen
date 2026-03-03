@@ -1,16 +1,18 @@
 // ============================================================================
-// Filename: licensegen/src/db/mod.rs
+// Filename: licensegen/src/lib.rs
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
-// Created: 2026-02-25
+// Created: 2026-03-03
 // Modified: 2026-03-03
-// Description:
+// Description: Crate Definitions
 // ============================================================================
 
-pub mod reader;
-pub mod types;
-pub mod writer;
 
-pub use reader::*;
-pub use types::*;
-pub use writer::*;
+mod config;
+mod db;
+mod logger_init;
+mod license;
+mod product;
+mod signing;
+mod util;
+mod vault;

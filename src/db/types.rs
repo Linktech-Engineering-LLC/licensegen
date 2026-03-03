@@ -1,10 +1,10 @@
 // ============================================================================
-// Filename: licensegen/src/product/db_model.rs
+// Filename: licensegen/src/db/types.rs
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
-// Created: 2026-02-19
+// Created: 2026-03-03
 // Modified: 2026-03-03
-// Description: Database-shaped structs for licensegen.
+// Description: Database Structures
 // ============================================================================
 
 use chrono::NaiveDate;
@@ -110,8 +110,8 @@ impl From<&Product> for DbProduct {
             payload_schema: serde_json::to_string(&p.license.payload_fields)
                 .expect("payload_schema JSON"),
 
-            editions: serde_json::to_string(&p.editions)
-                .expect("editions JSON"),
+            editions: Some(serde_json::to_string(&p.editions)
+                .expect("editions JSON")),
 
             features: "{}".into(), // placeholder until feature model is finalized
 
@@ -119,27 +119,34 @@ impl From<&Product> for DbProduct {
             active: true,
 
             // MySQL will overwrite these on insert
-            created: chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-            updated: chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-        }
+        created: chrono::NaiveDateTime::from_timestamp(0, 0),
+        updated: chrono::NaiveDateTime::from_timestamp(0, 0),        }
     }
 }
 
 impl DbProduct {
-    pub fn as_params(&self) -> (&str, &str, &str, &str, &str, &str, &str, &bool) {
+    pub fn as_params(&self) -> (
+        &str,
+        &str,
+        Option<&str>,
+        &str,
+        &str,
+        Option<&str>,
+        &str,
+        &bool,
+    ) {
         (
             &self.name,
             &self.code,
-            &self.version,
+            self.version.as_deref(),     // Option<String> → Option<&str>
             &self.payload_schema,
             &self.features,
-            &self.editions,
+            self.editions.as_deref(),    // Option<String> → Option<&str>
             &self.keypair_path,
             &self.active,
         )
     }
 }
-
 // ---------------------------------------------------------------------------
 // Editions table
 // ---------------------------------------------------------------------------

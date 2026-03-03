@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-01
+// Modified: 2026-03-02
 // Description: Defines the LicensePayload struct used for RSA signing.
 // ============================================================================
 
@@ -48,8 +48,8 @@ pub struct GeneratedLicense {
     pub acquired: NaiveDate,
     pub status: String,
 
-    pub issued_at: NaiveDateTime,
-    pub expires_at: Option<NaiveDateTime>,
+    pub issued: NaiveDateTime,
+    pub expires: Option<NaiveDateTime>,
 
     pub payload: serde_json::Value,
     pub signature: String,

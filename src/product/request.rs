@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-28
-// Modified: 2026-03-01
+// Modified: 2026-03-03
 // Description:
 // ============================================================================
 
@@ -24,6 +24,7 @@ pub struct ApplicationRequest {
 pub struct RequestSection {
     pub product: String,
     pub edition: String,
+    pub sku: String,
     #[serde(rename = "app")]
     pub name: String,
 }

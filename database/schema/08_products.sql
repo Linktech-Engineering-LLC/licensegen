@@ -1,5 +1,5 @@
  CREATE TABLE IF NOT EXISTS `products` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL COMMENT 'product name',
   `code` varchar(8) NOT NULL COMMENT 'short code',
   `version` varchar(10) DEFAULT NULL COMMENT 'version string "n.n.n"',
@@ -14,4 +14,4 @@
   UNIQUE KEY `name_code` (`name`,`code`),
   UNIQUE KEY `code` (`code`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |

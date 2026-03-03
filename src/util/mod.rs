@@ -1,16 +1,14 @@
 // ============================================================================
-// Filename: licensegen/src/db/mod.rs
+// Filename: licensegen/src/util/mod.rs
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
-// Created: 2026-02-25
+// Created: 2026-03-02
 // Modified: 2026-03-03
-// Description:
+// Description: 
 // ============================================================================
 
-pub mod reader;
-pub mod types;
-pub mod writer;
 
-pub use reader::*;
-pub use types::*;
-pub use writer::*;
+pub mod datetime;
+
+pub use datetime::*;
+

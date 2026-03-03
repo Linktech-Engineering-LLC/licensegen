@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-23
-// Modified: 2026-03-01
+// Modified: 2026-03-03
 // Description:
 // ============================================================================
 
@@ -29,9 +29,9 @@ pub struct Application {
 pub struct Product {
     pub name: String,
     pub code: String,
-    pub version: String,
+    pub version: Option<String>,
 
-    pub editions: Vec<String>,
+    pub editions: Option<String>,
     pub license: LicenseSection,
     pub signing: SigningSection,
 
