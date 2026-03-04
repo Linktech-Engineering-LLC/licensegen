@@ -3,9 +3,9 @@
   `application_id` bigint(20) unsigned NOT NULL,
   `edition_id` bigint(20) unsigned NOT NULL,
   `version` varchar(5) DEFAULT NULL,
-  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`payload`)),
-  `features` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`features`)),
-  `signature` text NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `features` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `signature` text DEFAULT NULL,
   `issued` date NOT NULL,
   `expires` date DEFAULT NULL,
   `valid_major` tinyint(3) unsigned DEFAULT NULL,
@@ -19,4 +19,4 @@
   KEY `expires` (`expires`) USING BTREE,
   CONSTRAINT `FK_LicApp` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_LicEdit` FOREIGN KEY (`edition_id`) REFERENCES `editions` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci

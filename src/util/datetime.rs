@@ -6,10 +6,28 @@
 // Modified: 2026-03-03
 // Description: 
 // ============================================================================
+use crate::license::{ValidityInfo, ValidityUnit};
 
-
-use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike};
+use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike, Duration};
 use mysql_common::value::Value;
+
+pub fn compute_expiration(v: &ValidityInfo) -> Option<NaiveDate> {
+    match v.expires {
+        Some(date) => Some(date),
+        None => {
+            let value = v.validity_value?;
+            let unit = v.validity_unit.as_ref()?;
+
+            let days = match unit {
+                ValidityUnit::Days => value,
+                ValidityUnit::Months => value * 30,
+                ValidityUnit::Years => value * 365,
+            };
+
+            Some(v.issued + Duration::days(days as i64))
+        }
+    }
+}
 
 pub fn from_naive_date(d: NaiveDate) -> Value {
     Value::Date(

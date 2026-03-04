@@ -14,7 +14,8 @@ use crate::db::{
     DbEdition,
     DbProduct,
 };
-use crate::license::types::{
+use crate::license::{
+    LicenseBundle,
     SignedLicense,
     ValidityInfo,
 };
@@ -244,7 +245,7 @@ pub async fn upsert_edition(
 pub async fn upsert_product(
     conn: &mut Conn,
     dbp: &DbProduct,
-) -> Result<bool, mysql_async::Error> {
+) -> Result<bool, Error> {
     conn.exec_drop(
         r#"
         INSERT INTO products
@@ -275,3 +276,50 @@ pub async fn upsert_product(
 
     Ok(rows == 1 || rows == 2)
 }
+
+pub async fn insert_new_license_row(
+    conn: &mut Conn,
+    bundle: &LicenseBundle,
+) -> anyhow::Result<i64> {
+
+    conn.exec_drop(
+        r#"
+        INSERT INTO licenses (
+            application_id,
+            edition_id,
+            issued,
+        )
+        VALUES (:app, :edition, :issued)
+        "#,
+        params! {
+            "app" => bundle.application.id,
+            "edition" => bundle.edition.id,
+            "issued" => from_naive_date(bundle.validity.issued),
+        },
+    ).await?;
+
+    let id = conn.last_insert_id().unwrap() as i64;
+    Ok(id)
+}
+
+pub async fn update_license_row(
+    conn: &mut Conn,
+    license_id: i64,
+    signed: &SignedLicense,
+) -> anyhow::Result<()> {
+    conn.exec_drop(
+        r#"
+        UPDATE license
+        SET payload_json = ?, signature = ?
+        WHERE id = ?
+        "#,
+        (
+            &signed.payload_json,
+            &signed.signature,
+            license_id,
+        ),
+    ).await?;
+
+    Ok(())
+}
+

@@ -247,6 +247,8 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: i64) -> Result
         issued: license.issued,
         expires: license.expires,  
         valid_major: license.valid_major.map(|v| v as i32),
+        validity_unit: None,
+        validity_value: None,
     };
 
     Ok(LicenseBundle {

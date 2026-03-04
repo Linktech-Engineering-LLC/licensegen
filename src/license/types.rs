@@ -89,12 +89,20 @@ pub struct ProductInfo {
     pub features: serde_json::Value,
     pub editions: serde_json::Value,
 }
+#[derive(Serialize)]
+pub enum ValidityUnit{
+    Days,
+    Months,
+    Years,
+}
 
 #[derive(Serialize)]
 pub struct ValidityInfo {
     pub issued: NaiveDate,
     pub expires: Option<NaiveDate>,
     pub valid_major: Option<i32>,
+    pub validity_value: Option<i32>,
+    pub validity_unit: Option<ValidityUnit>,
 }
 
 #[derive(Serialize)]
@@ -110,7 +118,7 @@ pub struct LicensePayload {
 // Signed artifact
 // ---------------------------------------------------------------------------
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct SignedLicense {
     pub payload_json: String,
     pub signature: String, // now Base64

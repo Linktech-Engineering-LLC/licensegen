@@ -34,10 +34,10 @@ impl fmt::Display for DbApplication {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DbApplication {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
-    pub customer_id: u64,
-    pub edition_id: u64,
+    pub customer_id: i64,
+    pub edition_id: i64,
 
     pub raw_yaml: String,
 
@@ -57,9 +57,9 @@ pub struct DbApplication {
 
 #[derive(Debug, Clone)]
 pub struct DbLicense {
-    pub id: u64,
-    pub application_id: u64,
-    pub edition_id: u64,
+    pub id: i64,
+    pub application_id: i64,
+    pub edition_id: i64,
 
     pub version: Option<String>,   // VARCHAR(5)
     pub payload: String,           // LONGTEXT JSON
@@ -81,7 +81,7 @@ pub struct DbLicense {
 
 #[derive(Debug, Clone)]
 pub struct DbProduct {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub code: String,
     pub version: Option<String>,
@@ -153,9 +153,9 @@ impl DbProduct {
 
 #[derive(Debug, Clone)]
 pub struct DbEdition {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
-    pub product_id: u64,
+    pub product_id: i64,
     pub sku: String,
     pub edition_code: String,
     pub metadata: String,               // JSON string from DB
@@ -170,13 +170,13 @@ pub struct DbEdition {
 
 #[derive(Debug, Clone)]
 pub struct DbCustomer {
-    pub id: u64,
+    pub id: i64,
     pub company: Option<String>,
     pub first: String,
     pub last: String,
     pub email: String,
     pub phone: String,
-    pub address_id: u64,
+    pub address_id: i64,
     pub notes: Option<String>,
     pub created: chrono::NaiveDateTime,
     pub updated: chrono::NaiveDateTime,
@@ -187,7 +187,7 @@ pub struct DbCustomer {
 
 #[derive(Debug, Clone)]
 pub struct DbAddress {
-    pub id: u64,
+    pub id: i64,
 
     pub maildrop: Option<String>,
     pub street: Option<String>,
