@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-26
-// Modified: 2026-03-01
+// Modified: 2026-03-04
 // Description:
 // ============================================================================
 
@@ -14,8 +14,8 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Edition {
-    pub id: u64,
-    pub application_id: u64,
+    pub id: i64,
+    pub application_id: i64,
     pub name: String,
     pub code: String,
     pub updated: chrono::NaiveDateTime,

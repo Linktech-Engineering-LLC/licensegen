@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-02
+// Modified: 2026-03-04
 // Description: Writes signed license artifacts to disk.
 // ============================================================================
 
@@ -12,7 +12,7 @@ use std::fs;
 use std::path::Path;
 
 // Project Libraries
-use crate::types::SignedLicense;
+use crate::license::types::SignedLicense;
 
 pub fn write_license_file<P: AsRef<Path>>(
     signed: &SignedLicense,

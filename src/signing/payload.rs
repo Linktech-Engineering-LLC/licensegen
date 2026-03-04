@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-02
+// Modified: 2026-03-04
 // Description: Defines the LicensePayload struct used for RSA signing.
 // ============================================================================
 
@@ -11,15 +11,16 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Serialize;
 // Project Libraries
-use crate::product::{Application, Edition};
+use crate::product::product::Application;
+use crate::product::edition::Edition;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Address {
-    pub id: u64,
+    pub id: i64,
     pub maildrop: String,
     pub street: String,
     pub suite: Option<String>,
-    pub zip: u64,
+    pub zip: i64,
     pub zip4: u8,
     pub city: Option<String>,
     pub state: Option<String>,
@@ -27,7 +28,7 @@ pub struct Address {
 }
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Customer {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub email: String,
     pub updated: chrono::NaiveDateTime,
@@ -39,9 +40,9 @@ pub struct CustomerBundle {
 }
 #[derive(Debug, Clone, Serialize)]
 pub struct GeneratedLicense {
-    pub application_id: u64,
-    pub customer_id: u64,
-    pub edition_id: u64,
+    pub application_id: i64,
+    pub customer_id: i64,
+    pub edition_id: i64,
 
     pub application_name: String,
     pub received: NaiveDate,
@@ -57,9 +58,9 @@ pub struct GeneratedLicense {
 }
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct License {
-    pub id: u64,
-    pub application_id: u64,
-    pub edition_id: u64,
+    pub id: i64,
+    pub application_id: i64,
+    pub edition_id: i64,
     pub version: Option<String>,
     pub payload: serde_json::Value,
     pub features: serde_json::Value,
@@ -82,7 +83,7 @@ pub struct LicensePayload {
 }
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ZipCode {
-    pub id: u64,
+    pub id: i64,
     pub zip: String,
     pub city: String,
     pub state: String,

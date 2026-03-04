@@ -3,13 +3,13 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: 
 // ============================================================================
 use mysql_async::{Row, Conn, params, prelude::*};
 use anyhow::Result;
 
-use crate::db::{
+use crate::db::types::{
     DbAddress,
     DbApplication,
     DbCustomer,
@@ -18,12 +18,12 @@ use crate::db::{
     DbProduct,
     DbZipcode,
 };
-use crate::license::{LicenseBundle, ValidityInfo};
-use crate::util::{to_naive_date, to_naive_datetime};
+use crate::license::types::{LicenseBundle, ValidityInfo};
+use crate::util::datetime::{to_naive_date, to_naive_datetime};
 
 pub async fn fetch_application(
     pool: &mysql_async::Pool,
-    app_id: u64,
+    app_id: i64,
 ) -> mysql_async::Result<DbApplication> {
     let mut conn = pool.get_conn().await?;
 
@@ -74,7 +74,7 @@ pub async fn fetch_application(
 pub async fn get_product_id_by_code(
     conn: &mut Conn,
     code: &str,
-) -> Result<Option<u64>, mysql_async::Error> {
+) -> Result<Option<i64>, mysql_async::Error> {
     conn.exec_first(
         "SELECT id FROM products WHERE code = :code",
         params! { "code" => code },
@@ -84,8 +84,8 @@ pub async fn get_product_id_by_code(
 pub async fn resolve_edition_id_by_sku(
     conn: &mut Conn,
     sku: &str,
-) -> Result<u64, mysql_async::Error> {
-    let id: Option<u64> = conn
+) -> Result<i64, mysql_async::Error> {
+    let id: Option<i64> = conn
         .exec_first(
             r#"
             SELECT id

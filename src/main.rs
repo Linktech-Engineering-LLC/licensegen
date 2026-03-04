@@ -3,23 +3,25 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: Entry point for licensegen.
 // ============================================================================
 
-// System Libraries
-use std::path::PathBuf;
-// User Libraries
-use crate::product::{fetch_application, load_all_editions, load_all_products, load_application};
-use crate::product::{sync_application, sync_edition, sync_product};
-use config::Config;
+use std::path::{self, PathBuf};
+
+use licensegen::db::pool::init_pool;
+use licensegen::db::reader::fetch_application;
+use licensegen::config::Config;
+use licensegen::license::generator::generate_license;
+use licensegen::product::loader::{load_all_editions, load_all_products, load_application};
+use licensegen::product::sync::{sync_application, sync_edition, sync_product};
+use licensegen::signing::loaders::load_keypair;
+use licensegen::signing::resolver::resolve_keypair_paths;
+use licensegen::vault::types::{VaultError, VaultSecrets};
+use licensegen::vault::ansible::decrypt_with_ansible;
 
 use log::{debug, error, info};
 use logger::{end_banner, init, start_banner};
-use signing::{load_keypair, resolve_keypair_paths};
-use vault::VaultError;
-use vault::VaultSecrets;
-use vault::decrypt_with_ansible;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secrets: VaultSecrets = serde_yaml::from_value(subtree.clone())
         .map_err(|e| VaultError::YamlError(e.to_string()))?;
     info!("Vault secrets loaded for {}", app_key);
-    let pool = db::pool::init_pool(&secrets).await?;
+    let pool = init_pool(&secrets).await?;
 
     // Load all products
     let prod_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&cfg.paths.products_dir);
@@ -138,8 +140,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Fetched Application {}", app);
     //let license = generate_license(&application)?;
     //let license_id = sync_license(&pool, application_id, &license).await?;
-
-    //info!("License generated and synced with ID {}", license_id);
+    let (license_id, license_path) = generate_license(
+        &mut conn,
+        application_id,
+        &private_key,
+        &cfg.paths.output_dir,
+    ).await?;
+    info!("License generated and synced with ID {}", license_id);
     // End banner
     end_banner();
 

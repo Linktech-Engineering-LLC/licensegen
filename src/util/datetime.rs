@@ -3,10 +3,10 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: 
 // ============================================================================
-use crate::license::{ValidityInfo, ValidityUnit};
+use crate::license::types::{ValidityInfo, ValidityUnit};
 
 use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike, Duration};
 use mysql_common::value::Value;

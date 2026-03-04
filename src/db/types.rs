@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: Database Structures
 // ============================================================================
 
@@ -12,7 +12,7 @@ use serde::Serialize;
 use serde_json;
 use std::fmt;
 
-use crate::product::Product;
+use crate::product::product::Product;
 
 // ---------------------------------------------------------------------------
 // Display for DbApplication

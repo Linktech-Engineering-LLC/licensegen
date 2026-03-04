@@ -3,25 +3,31 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: Synchronization logic for product.yml → Products table.
 // ============================================================================
 
 use mysql_async::{Pool, Row, params, prelude::*};
 
-use crate::db::{
+use crate::db::types::{
     DbApplication, 
     DbProduct,
+};
+use crate::db::writer::{
     resolve_or_insert_address, 
     resolve_or_insert_application,
     resolve_or_insert_customer,
-    resolve_edition_id_by_sku,
     upsert_product, 
-    get_product_id_by_code,
     upsert_edition
 };
-use crate::product::{ApplicationRequest, EditionRoot, Product};
-use crate::util::{to_naive_date, to_naive_datetime};
+use crate::db::reader::{
+    resolve_edition_id_by_sku,
+    get_product_id_by_code
+};
+use crate::product::request::ApplicationRequest;
+use crate::product::product::Product;
+use crate::product::edition::EditionRoot;
+use crate::util::datetime::{to_naive_date, to_naive_datetime};
 
 /// Returns:
 ///   Ok((true,  id))  → inserted or updated
@@ -29,7 +35,7 @@ use crate::util::{to_naive_date, to_naive_datetime};
 pub async fn sync_product(
     pool: &Pool,
     product: &Product,
-) -> Result<(bool, u64), mysql_async::Error> {
+) -> Result<(bool, i64), mysql_async::Error> {
     // Acquire a connection explicitly
     let mut conn = pool.get_conn().await?;
 
@@ -57,7 +63,7 @@ pub async fn sync_product(
 
 pub async fn sync_edition(
     pool: &Pool,
-    product_id: u64,
+    product_id: i64,
     root: &EditionRoot,
 ) -> Result<bool, mysql_async::Error> {
     let edition = &root.edition;
@@ -92,8 +98,8 @@ pub async fn sync_edition(
 pub async fn sync_application(
     conn: &mut mysql_async::Conn,
     req: &ApplicationRequest,
-) -> Result<u64, mysql_async::Error> {
-    // 1. Resolve existing address_id (Option<u64> → u64)
+) -> Result<i64, mysql_async::Error> {
+    // 1. Resolve existing address_id (Option<i64> → i64)
      let address_id = resolve_or_insert_address(conn, &req.contact.address).await?;
     //
     // 3. Resolve or insert customer

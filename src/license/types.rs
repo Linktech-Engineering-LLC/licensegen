@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: 
 // ============================================================================
 
@@ -12,7 +12,7 @@ use chrono::NaiveDate;
 use serde::Serialize;
 use serde_json;
 // Project Libraries
-use crate::db::{
+use crate::db::types::{
     DbAddress,
     DbApplication,
     DbCustomer,

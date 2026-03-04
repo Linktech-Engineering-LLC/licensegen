@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: 
 // ============================================================================
 
@@ -11,23 +11,25 @@
 use mysql_async::Conn;
 use rsa::RsaPrivateKey;
 use std::path::PathBuf;
+use chrono::NaiveDate;
 // Project Libraries
-use crate::db::{insert_new_license_row, load_license_bundle, update_license_row};
+use crate::db::writer::{insert_new_license_row, update_license_row};
+use crate::db::reader::load_license_bundle;
 use crate::license::evaluator::evaluate_license;
 use crate::license::payload::build_payload;
-use crate::license::signer::sign_payload;
+use crate::license::crypto::{sign_payload};
 use crate::license::writer::write_license_file;
 use crate::license::types::LicenseDecision;
-use crate::util::compute_expiration;
+use crate::util::datetime::compute_expiration;
 
-pub async  fn generate_license(
+pub async fn generate_license(
     conn: &mut Conn,
-    license_id: i64,
+    application_id: i64,
     private_key: &RsaPrivateKey,
     output_dir: &str,
-) -> anyhow::Result<PathBuf> {
+) -> anyhow::Result<(i64, PathBuf)> {
     // 1. Load all DB rows needed for this license
-    let bundle = load_license_bundle(conn,license_id).await?;
+    let bundle = load_license_bundle(conn, application_id).await?;
 
     // 2. Decide whether to reuse or issue new
     let decision = evaluate_license(&bundle)?;

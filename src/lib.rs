@@ -3,16 +3,15 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: Crate Definitions
 // ============================================================================
 
-
-mod config;
-mod db;
-mod logger_init;
-mod license;
-mod product;
-mod signing;
-mod util;
-mod vault;
+pub mod config;
+pub mod db;
+pub mod logger_init;
+pub mod license;
+pub mod product;
+pub mod signing;
+pub mod util;
+pub mod vault;

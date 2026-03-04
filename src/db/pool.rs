@@ -3,16 +3,16 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-25
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description:
 // ============================================================================
 
 // System Libraries
 use mysql_async::{Error, Opts, Pool};
 // Project Libraries
-use crate::vault::VaultSecrets;
+use crate::vault::types::VaultSecrets;
 
-pub async fn init_pool(cfg: &VaultSecrets) -> Result<Pool, mysql_async::Error> {
+pub async fn init_pool(cfg: &VaultSecrets) -> Result<Pool, Error> {
     let conn_string = format!(
         "mysql://{}:{}@{}:{}/{}",
         cfg.user, cfg.pass, cfg.host, cfg.port, cfg.database

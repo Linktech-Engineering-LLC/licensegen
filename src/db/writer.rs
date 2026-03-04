@@ -3,24 +3,25 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-03
+// Modified: 2026-03-04
 // Description: 
 // ============================================================================
 
 use mysql_async::{Conn, Error, params, prelude::*};
 
-use crate::db::{
+use crate::db::types::{
     DbApplication,
     DbEdition,
     DbProduct,
 };
-use crate::license::{
+use crate::license::types::{
     LicenseBundle,
     SignedLicense,
     ValidityInfo,
 };
-use crate::product::{Address, ContactSection, EditionInfo, ApplicationRequest};
-use crate::util::{from_naive_date, opt_i32};
+use crate::product::request::{Address, ContactSection, ApplicationRequest};
+use crate::product::edition::EditionInfo;
+use crate::util::datetime::{from_naive_date, opt_i32};
 
 pub async fn write_license_to_db(
     conn: &mut Conn,

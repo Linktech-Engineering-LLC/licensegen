@@ -3,14 +3,14 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-23
-// Modified: 2026-02-23
+// Modified: 2026-03-04
 // Description:
 // ============================================================================
 
 // System Libraries
 use std::process::Command;
 // Project Libraries
-use crate::vault::VaultError;
+use crate::vault::types::VaultError;
 
 pub fn decrypt_with_ansible(vault_path: &str, password_file: &str) -> Result<String, VaultError> {
     let output = Command::new("ansible-vault")

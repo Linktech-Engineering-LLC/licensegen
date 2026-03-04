@@ -9,7 +9,7 @@
 use chrono::NaiveDate;
 use serde_json::Value;
 
-use crate::db::{
+use crate::db::types::{
     DbAddress, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
 };
 use crate::license::types::{
