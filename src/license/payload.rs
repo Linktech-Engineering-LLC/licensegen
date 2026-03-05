@@ -6,9 +6,6 @@
 // Description: Canonical payload builder for licensegen.
 // ============================================================================
 
-use chrono::NaiveDate;
-use serde_json::Value;
-
 use crate::db::types::{
     DbAddress, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
 };

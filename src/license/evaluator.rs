@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 
@@ -12,10 +12,10 @@ use anyhow::Result;
 use crate::license::types::{LicenseBundle, LicenseDecision};
 use crate::license::evaluator_error::EvaluationError;
 
-pub fn parse_major(version: &str) -> Option<i32> {
+pub fn parse_major(version: &str) -> Option<u8> {
     version.split('.')
         .next()
-        .and_then(|s| s.parse::<i32>().ok())
+        .and_then(|s| s.parse::<u8>().ok())
 }
 
 pub fn evaluate_license(bundle: &LicenseBundle) -> Result<LicenseDecision, EvaluationError>{

@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 
@@ -100,8 +100,8 @@ pub enum ValidityUnit{
 pub struct ValidityInfo {
     pub issued: NaiveDate,
     pub expires: Option<NaiveDate>,
-    pub valid_major: Option<i32>,
-    pub validity_value: Option<i32>,
+    pub valid_major: Option<u8>,
+    pub validity_value: Option<u16>,
     pub validity_unit: Option<ValidityUnit>,
 }
 

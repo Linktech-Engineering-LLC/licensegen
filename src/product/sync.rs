@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: Synchronization logic for product.yml → Products table.
 // ============================================================================
 
@@ -15,7 +15,7 @@ use crate::db::types::{
 };
 use crate::db::writer::{
     resolve_or_insert_address, 
-    resolve_or_insert_application,
+    resolve_or_upsert_application,
     resolve_or_insert_customer,
     upsert_product, 
     upsert_edition
@@ -35,7 +35,7 @@ use crate::util::datetime::{to_naive_date, to_naive_datetime};
 pub async fn sync_product(
     pool: &Pool,
     product: &Product,
-) -> Result<(bool, i64), mysql_async::Error> {
+) -> Result<(bool, u64), mysql_async::Error> {
     // Acquire a connection explicitly
     let mut conn = pool.get_conn().await?;
 
@@ -63,7 +63,7 @@ pub async fn sync_product(
 
 pub async fn sync_edition(
     pool: &Pool,
-    product_id: i64,
+    product_id: u64,
     root: &EditionRoot,
 ) -> Result<bool, mysql_async::Error> {
     let edition = &root.edition;
@@ -98,15 +98,15 @@ pub async fn sync_edition(
 pub async fn sync_application(
     conn: &mut mysql_async::Conn,
     req: &ApplicationRequest,
-) -> Result<i64, mysql_async::Error> {
-    // 1. Resolve existing address_id (Option<i64> → i64)
+) -> Result<u64, mysql_async::Error> {
+    // 1. Resolve existing address_id (Option<u64> → u64)
      let address_id = resolve_or_insert_address(conn, &req.contact.address).await?;
     //
     // 3. Resolve or insert customer
     //
     let customer_id = resolve_or_insert_customer(conn, &req.contact, address_id).await?;
     let edition_id = resolve_edition_id_by_sku(conn, &req.request.sku).await?;
-    let app_id = resolve_or_insert_application(conn, customer_id, edition_id, req).await?;
+    let app_id = resolve_or_upsert_application(conn, customer_id, edition_id, req).await?;
 
     Ok(app_id)
 }

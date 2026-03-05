@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 use crate::license::types::{ValidityInfo, ValidityUnit};
@@ -48,7 +48,18 @@ pub fn from_naive_datetime(dt: NaiveDateTime) -> Value {
         0,
     )
 }
-
+pub fn opt<T>(v: Option<T>) -> Option<Value>
+where
+    T: Into<Value>,
+{
+    v.map(|x| x.into())
+}
+pub fn opt_u8(v: Option<u8>) -> Option<Value> {
+    v.map(|x| x.into())
+}
+pub fn opt_u32(v: Option<u32>) -> Option<Value> {
+    v.map(|x| x.into())
+}
 pub fn opt_i32(v: Option<i32>) -> Option<Value> {
     v.map(|x| x.into())
 }

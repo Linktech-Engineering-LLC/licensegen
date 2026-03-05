@@ -3,11 +3,12 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 
 use mysql_async::{Conn, Error, params, prelude::*};
+use rust_decimal::Decimal;
 
 use crate::db::types::{
     DbApplication,
@@ -21,7 +22,7 @@ use crate::license::types::{
 };
 use crate::product::request::{Address, ContactSection, ApplicationRequest};
 use crate::product::edition::EditionInfo;
-use crate::util::datetime::{from_naive_date, opt_i32};
+use crate::util::datetime::{from_naive_date, opt};
 
 pub async fn write_license_to_db(
     conn: &mut Conn,
@@ -45,7 +46,7 @@ pub async fn write_license_to_db(
             "signature"      => &signed.signature,
             "issued"         => from_naive_date(validity.issued),
             "expires"        => validity.expires.map(from_naive_date),
-            "valid_major" => opt_i32(validity.valid_major),
+            "valid_major" => opt(validity.valid_major),
         },
     )
     .await?;
@@ -117,54 +118,62 @@ pub async fn resolve_or_insert_address(
     Ok(conn.last_insert_id().expect("address insert missing last_insert_id"))
 }
 
-pub async fn resolve_or_insert_application(
+pub async fn resolve_or_upsert_application(
     conn: &mut Conn,
     customer_id: u64,
     edition_id: u64,
     req: &ApplicationRequest,
 ) -> Result<u64, mysql_async::Error> {
-    // 1. Try to resolve existing application
-    let existing: Option<u64> = conn
-        .exec_first(
-            r#"
-            SELECT id FROM applications
-            WHERE customer_id = :customer_id
-              AND edition_id  = :edition_id
-              AND name        = :app_name
-            "#,
-            params! {
-                "customer_id" => customer_id,
-                "edition_id"  => edition_id,
-                "app_name"    => &req.request.name,
-            },
-        )
-        .await?;
 
-    if let Some(id) = existing {
-        return Ok(id);
-    }
-
-    // 2. Insert new application
+    // 1. Perform UPSERT using the unique key (name, customer_id, edition_id)
     conn.exec_drop(
         r#"
         INSERT INTO applications
-            (customer_id, edition_id, name, raw_yaml, received, acquired)
+            (name, customer_id, edition_id, price, valid_major,
+             validity_value, validity_unit, raw_yaml, received, acquired)
         VALUES
-            (:customer_id, :edition_id, :app_name, :raw_yaml, :received, :acquired)
+            (:app_name, :customer_id, :edition_id, :price, :valid_major,
+             :validity_value, :validity_unit, :raw_yaml, :received, :acquired)
+        ON DUPLICATE KEY UPDATE
+            price          = VALUES(price),
+            valid_major    = VALUES(valid_major),
+            validity_value = VALUES(validity_value),
+            validity_unit  = VALUES(validity_unit),
+            raw_yaml       = VALUES(raw_yaml),
+            received       = VALUES(received),
+            acquired       = VALUES(acquired),
+            updated        = CURRENT_TIMESTAMP
+        "#,
+        params! {
+            "app_name"       => &req.request.name,
+            "customer_id"    => customer_id,
+            "edition_id"     => edition_id,
+            "price"          => req.vendor.price.unwrap_or(Decimal::ZERO),
+            "valid_major"    => req.vendor.valid_major,
+            "validity_value" => req.vendor.validity_value.unwrap_or(0),
+            "validity_unit"  => &req.vendor.validity_unit.as_deref(),
+            "raw_yaml"       => &req.raw_yaml,
+            "received"       => from_naive_date(req.vendor.received_on),
+            "acquired"       => from_naive_date(req.vendor.acquired),
+        },
+    ).await?;
+
+    // 2. Retrieve the application ID (works for both INSERT and UPDATE)
+    let id: Option<u64> = conn.exec_first(
+        r#"
+        SELECT id FROM applications
+        WHERE customer_id = :customer_id
+          AND edition_id  = :edition_id
+          AND name        = :app_name
         "#,
         params! {
             "customer_id" => customer_id,
             "edition_id"  => edition_id,
             "app_name"    => &req.request.name,
-            "raw_yaml"    => &req.raw_yaml,
-            "received"    => &req.vendor.received_on,
-            "acquired"    => &req.vendor.acquired,
         },
-    )
-    .await?;
+    ).await?;
 
-    // 3. Return new ID
-    Ok(conn.last_insert_id().expect("INSERT into applications did not produce a last_insert_id"))
+    Ok(id.expect("UPSERT succeeded but SELECT id returned None"))
 }
 
 pub async fn resolve_or_insert_customer(
@@ -219,11 +228,12 @@ pub async fn upsert_edition(
     conn.exec_drop(
         r#"
         INSERT INTO editions
-            (product_id, sku, edition_code, name, valid, metadata)
+            (product_id, sku, edition_code, name, price, valid, metadata)
         VALUES
-            (:product_id, :sku, :code, :name, :valid, :metadata)
+            (:product_id, :sku, :code, :name, :price, :valid, :metadata)
         ON DUPLICATE KEY UPDATE
             name = VALUES(name),
+            price = VALUES(price),
             valid = VALUES(valid),
             metadata = VALUES(metadata)
         "#,
@@ -232,6 +242,7 @@ pub async fn upsert_edition(
             "sku"        => &edition.sku,
             "code"       => &edition.code,
             "name"       => &edition.name,
+            "price"      => edition.price,
             "valid"      => edition.valid,
             "metadata"   => metadata,
         },
@@ -281,7 +292,7 @@ pub async fn upsert_product(
 pub async fn insert_new_license_row(
     conn: &mut Conn,
     bundle: &LicenseBundle,
-) -> anyhow::Result<i64> {
+) -> anyhow::Result<u64> {
 
     conn.exec_drop(
         r#"
@@ -299,13 +310,13 @@ pub async fn insert_new_license_row(
         },
     ).await?;
 
-    let id = conn.last_insert_id().unwrap() as i64;
+    let id = conn.last_insert_id().unwrap() as u64;
     Ok(id)
 }
 
 pub async fn update_license_row(
     conn: &mut Conn,
-    license_id: i64,
+    license_id: u64,
     signed: &SignedLicense,
 ) -> anyhow::Result<()> {
     conn.exec_drop(

@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 use mysql_async::{Row, Conn, params, prelude::*};
@@ -19,32 +19,17 @@ use crate::db::types::{
     DbZipcode,
 };
 use crate::license::types::{LicenseBundle, ValidityInfo};
-use crate::util::datetime::{to_naive_date, to_naive_datetime};
+use crate::util::datetime::{to_naive_date, to_naive_datetime, opt};
 
 pub async fn fetch_application(
-    pool: &mysql_async::Pool,
-    app_id: i64,
-) -> mysql_async::Result<DbApplication> {
-    let mut conn = pool.get_conn().await?;
-
+    conn: &mut Conn,
+    app_id: u64,
+) -> mysql_async::Result<DbApplication>
+{
     let row: Row = conn
         .exec_first(
-            r#"
-        SELECT
-            id,
-            customer_id,
-            edition_id,
-            name,
-            raw_yaml,
-            received,
-            acquired,
-            status,
-            created,
-            updated
-        FROM applications
-        WHERE id = :id
-        "#,
-            params! { "id" => app_id },
+            "SELECT * FROM applications WHERE id = :id",
+            params!{"id" => app_id},
         )
         .await?
         .expect("application not found");
@@ -57,13 +42,22 @@ pub async fn fetch_application(
 
     let app = DbApplication {
         id: row.get("id").unwrap(),
+        name: row.get("name").unwrap_or_default(),
         customer_id: row.get("customer_id").unwrap(),
         edition_id: row.get("edition_id").unwrap(),
-        name: row.get("name").unwrap(),
-        raw_yaml: row.get("raw_yaml").unwrap(),
+        price: row.get("price").unwrap_or_default(),
+
+        // Nullable fields
+        valid_major: row.get("valid_major"),
+        validity_unit: row.get("validity_unit").unwrap(),
+
+        // NOT NULL in schema, but older rows may still contain NULL
+        validity_value: row.get("validity_value").unwrap_or(0),
+        raw_yaml: row.get("raw_yaml").unwrap_or_default(),
+        status: row.get("status").unwrap_or_else(|| "pending".to_string()),
+
         received,
         acquired,
-        status: row.get("status").unwrap(),
         created,
         updated,
     };
@@ -74,7 +68,7 @@ pub async fn fetch_application(
 pub async fn get_product_id_by_code(
     conn: &mut Conn,
     code: &str,
-) -> Result<Option<i64>, mysql_async::Error> {
+) -> Result<Option<u64>, mysql_async::Error> {
     conn.exec_first(
         "SELECT id FROM products WHERE code = :code",
         params! { "code" => code },
@@ -84,8 +78,8 @@ pub async fn get_product_id_by_code(
 pub async fn resolve_edition_id_by_sku(
     conn: &mut Conn,
     sku: &str,
-) -> Result<i64, mysql_async::Error> {
-    let id: Option<i64> = conn
+) -> Result<u64, mysql_async::Error> {
+    let id: Option<u64> = conn
         .exec_first(
             r#"
             SELECT id
@@ -104,27 +98,10 @@ pub async fn resolve_edition_id_by_sku(
     }
 }
 
-pub async fn load_license_bundle(conn: &mut Conn, application_id: i64) -> Result<LicenseBundle> {
+pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result<LicenseBundle> {
 
     // 1. Load the application row
-    let row: Row = conn.exec_first(
-        "SELECT * FROM applications WHERE id = ?",
-        (application_id,)
-    ).await?
-    .ok_or_else(|| anyhow::anyhow!("Application not found"))?;
-
-    let application = DbApplication {
-        id: row.get("id").unwrap(),
-        edition_id: row.get("edition_id").unwrap(),
-        customer_id: row.get("customer_id").unwrap(),
-        name: row.get("name").unwrap(),
-        raw_yaml: row.get("raw_yaml").unwrap(),
-        received: to_naive_date(row.get("received").unwrap()),
-        acquired: to_naive_date(row.get("acquired").unwrap()),
-        status: row.get("status").unwrap(),
-        created: to_naive_datetime(row.get("created").unwrap()),
-        updated: to_naive_datetime(row.get("updated").unwrap()),
-    };
+    let application = fetch_application(conn, application_id).await?;
 
     // 2. Load edition (this contains product_id)
     let row: Row = conn.exec_first(
@@ -137,6 +114,7 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: i64) -> Result
         id: row.get("id").unwrap(),
         name: row.get("name").unwrap(),
         product_id: row.get("product_id").unwrap(),
+        price: row.get("price"),
         sku: row.get("sku").unwrap(),
         edition_code: row.get("edition_code").unwrap(),
         metadata: row.get("metadata").unwrap(),
@@ -232,6 +210,7 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: i64) -> Result
         application_id: row.get("application_id").unwrap(),
         edition_id: row.get("edition_id").unwrap(),
         version: row.get("version"),
+        paid: row.get("paid"),
         payload: row.get("payload").unwrap(),
         features: row.get("features").unwrap(),
         signature: row.get("signature").unwrap(),
@@ -246,7 +225,7 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: i64) -> Result
     let validity = ValidityInfo {
         issued: license.issued,
         expires: license.expires,  
-        valid_major: license.valid_major.map(|v| v as i32),
+        valid_major: license.valid_major,
         validity_unit: None,
         validity_value: None,
     };

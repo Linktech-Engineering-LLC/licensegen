@@ -3,11 +3,13 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: Database Structures
 // ============================================================================
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
+//use mysql_common::binlog::decimal::Decimal;
+use rust_decimal::Decimal;
 use serde::Serialize;
 use serde_json;
 use std::fmt;
@@ -34,11 +36,14 @@ impl fmt::Display for DbApplication {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DbApplication {
-    pub id: i64,
+    pub id: u64,
     pub name: String,
-    pub customer_id: i64,
-    pub edition_id: i64,
-
+    pub customer_id: u64,
+    pub edition_id: u64,
+    pub price: Decimal,
+    pub valid_major: Option<u8>,
+    pub validity_value: u8,
+    pub validity_unit: Option<String>,
     pub raw_yaml: String,
 
     pub received: NaiveDate,
@@ -46,8 +51,8 @@ pub struct DbApplication {
 
     pub status: String,
 
-    pub created: chrono::NaiveDateTime,
-    pub updated: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 
 }
 
@@ -57,9 +62,10 @@ pub struct DbApplication {
 
 #[derive(Debug, Clone)]
 pub struct DbLicense {
-    pub id: i64,
-    pub application_id: i64,
-    pub edition_id: i64,
+    pub id: u64,
+    pub application_id: u64,
+    pub edition_id: u64,
+    pub paid: Option<Decimal>,
 
     pub version: Option<String>,   // VARCHAR(5)
     pub payload: String,           // LONGTEXT JSON
@@ -71,8 +77,8 @@ pub struct DbLicense {
     pub valid_major: Option<u8>,
     pub revoked: bool,
 
-    pub created: chrono::NaiveDateTime,
-    pub updated: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 }
 
 // ---------------------------------------------------------------------------
@@ -81,7 +87,7 @@ pub struct DbLicense {
 
 #[derive(Debug, Clone)]
 pub struct DbProduct {
-    pub id: i64,
+    pub id: u64,
     pub name: String,
     pub code: String,
     pub version: Option<String>,
@@ -93,8 +99,8 @@ pub struct DbProduct {
     pub keypair_path: String,
     pub active: bool,
 
-    pub created: chrono::NaiveDateTime,
-    pub updated: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 }
 
 // Convert YAML Product → DbProduct row
@@ -119,8 +125,8 @@ impl From<&Product> for DbProduct {
             active: true,
 
             // MySQL will overwrite these on insert
-        created: chrono::NaiveDateTime::from_timestamp(0, 0),
-        updated: chrono::NaiveDateTime::from_timestamp(0, 0),        }
+        created: NaiveDateTime::from_timestamp(0, 0),
+        updated: NaiveDateTime::from_timestamp(0, 0),        }
     }
 }
 
@@ -153,15 +159,16 @@ impl DbProduct {
 
 #[derive(Debug, Clone)]
 pub struct DbEdition {
-    pub id: i64,
+    pub id: u64,
     pub name: String,
-    pub product_id: i64,
+    pub product_id: u64,
     pub sku: String,
     pub edition_code: String,
+    pub price: Option<Decimal>,
     pub metadata: String,               // JSON string from DB
     pub valid: bool,
-    pub created: chrono::NaiveDateTime,
-    pub updated: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 }
 
 // ---------------------------------------------------------------------------
@@ -170,16 +177,16 @@ pub struct DbEdition {
 
 #[derive(Debug, Clone)]
 pub struct DbCustomer {
-    pub id: i64,
+    pub id: u64,
     pub company: Option<String>,
     pub first: String,
     pub last: String,
     pub email: String,
     pub phone: String,
-    pub address_id: i64,
+    pub address_id: u64,
     pub notes: Option<String>,
-    pub created: chrono::NaiveDateTime,
-    pub updated: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 }
 // ---------------------------------------------------------------------------
 // Addresses table
@@ -187,7 +194,7 @@ pub struct DbCustomer {
 
 #[derive(Debug, Clone)]
 pub struct DbAddress {
-    pub id: i64,
+    pub id: u64,
 
     pub maildrop: Option<String>,
     pub street: Option<String>,
@@ -201,8 +208,8 @@ pub struct DbAddress {
     pub county: Option<String>,
     pub country: String,
 
-    pub created: chrono::NaiveDateTime,
-    pub updated: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 }
 #[derive(Debug, Clone)]
 pub struct DbZipcode {

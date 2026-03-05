@@ -3,10 +3,13 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-28
-// Modified: 2026-03-03
+// Modified: 2026-03-05
 // Description:
 // ============================================================================
 
+use chrono::NaiveDate;
+//use mysql_common::binlog::decimal::Decimal;
+use rust_decimal::Decimal;
 // System Libraries
 use serde::{Deserialize, Serialize};
 // Project Libraries
@@ -60,8 +63,11 @@ pub struct Address {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VendorSection {
-    pub received_on: String,
-    pub valid_major: u32,
-    pub acquired: String,
+    pub received_on: NaiveDate,
+    pub acquired: NaiveDate,
+    pub price: Option<Decimal>,
+    pub valid_major: Option<u8>,
+    pub validity_value: Option<u8>,
+    pub validity_unit: Option<String>,
     pub notes: Option<String>,
 }

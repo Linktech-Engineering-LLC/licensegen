@@ -3,21 +3,22 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-26
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description:
 // ============================================================================
 
-// System Libraries
+//use mysql_common::binlog::decimal::Decimal;
+use rust_decimal::Decimal;
 use serde::Deserialize;
 use std::collections::HashMap;
-// Project Libraries
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Edition {
-    pub id: i64,
-    pub application_id: i64,
+    pub id: u64,
+    pub application_id: u64,
     pub name: String,
     pub code: String,
+    pub price: Option<Decimal>,
     pub updated: chrono::NaiveDateTime,
 }
 #[derive(Debug, Deserialize)]
@@ -25,6 +26,7 @@ pub struct EditionInfo {
     pub sku: String,
     pub code: String, // COM, PRO, ENT, DEV
     pub name: String, // "Community Edition"
+    pub price: Option<Decimal>,
     pub valid: bool,  // true/false
 }
 #[derive(Debug, Deserialize)]

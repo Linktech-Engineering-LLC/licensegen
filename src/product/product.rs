@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-23
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description:
 // ============================================================================
 
@@ -15,10 +15,10 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Application {
-    pub id: Option<i64>,
-    pub customer_id: i64, // resolved from customer sync
-    pub product_id: i64,  // resolved from product name
-    pub edition_id: i64,  // resolved from edition code
+    pub id: Option<u64>,
+    pub customer_id: u64, // resolved from customer sync
+    pub product_id: u64,  // resolved from product name
+    pub edition_id: u64,  // resolved from edition code
     pub app_name: String, // "Monitor Dad's Firewall"
     pub received: NaiveDate,
     pub valid_major: u8,

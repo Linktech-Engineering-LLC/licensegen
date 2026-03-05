@@ -1,4 +1,5 @@
 | CREATE TABLE IF NOT EXISTS `licenses` (
+| licenses | CREATE TABLE `licenses` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `application_id` bigint(20) unsigned NOT NULL,
   `edition_id` bigint(20) unsigned NOT NULL,
@@ -19,4 +20,4 @@
   KEY `expires` (`expires`) USING BTREE,
   CONSTRAINT `FK_LicApp` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_LicEdit` FOREIGN KEY (`edition_id`) REFERENCES `editions` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |

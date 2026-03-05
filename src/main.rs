@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: Entry point for licensegen.
 // ============================================================================
 
@@ -136,17 +136,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------
     // Generate and sync license
     // ------------------------------------------------------------
-    let app = fetch_application(&pool, application_id).await?;
+    let mut conn = pool.get_conn().await?;
+    let app = fetch_application(&mut conn, application_id).await?;
     println!("Fetched Application {}", app);
     //let license = generate_license(&application)?;
     //let license_id = sync_license(&pool, application_id, &license).await?;
-    let (license_id, license_path) = generate_license(
-        &mut conn,
-        application_id,
-        &private_key,
-        &cfg.paths.output_dir,
-    ).await?;
-    info!("License generated and synced with ID {}", license_id);
+    //let (license_id, license_path) = generate_license(
+    //    &mut conn,
+    //    application_id,
+    //    &private_key,
+    //    &cfg.paths.output_dir,
+    //).await?;
+    //info!("License generated and synced with ID {}", license_id);
     // End banner
     end_banner();
 

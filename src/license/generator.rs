@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-04
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 
@@ -24,10 +24,10 @@ use crate::util::datetime::compute_expiration;
 
 pub async fn generate_license(
     conn: &mut Conn,
-    application_id: i64,
+    application_id: u64,
     private_key: &RsaPrivateKey,
     output_dir: &str,
-) -> anyhow::Result<(i64, PathBuf)> {
+) -> anyhow::Result<(u64, PathBuf)> {
     // 1. Load all DB rows needed for this license
     let bundle = load_license_bundle(conn, application_id).await?;
 
@@ -72,5 +72,5 @@ pub async fn generate_license(
     // 6. Write the final license file
     write_license_file(&signed, &path)?;
 
-    Ok(path)
+    Ok((id, path))
 }

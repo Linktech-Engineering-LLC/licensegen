@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-03
+// Modified: 2026-03-05
 // Description: 
 // ============================================================================
 
@@ -14,8 +14,8 @@ use thiserror::Error;
 pub enum EvaluationError {
     #[error("major version mismatch: expected {expected:?}, found {found:?}")]
     MajorVersionMismatch {
-        expected: Option<i32>,
-        found: Option<i32>,
+        expected: Option<u8>,
+        found: Option<u8>,
     },
 
     #[error("product version is missing or invalid")]
