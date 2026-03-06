@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-04
-// Modified: 2026-03-04
+// Modified: 2026-03-06
 // Description: Tests the license generation from end to end
 // ============================================================================
 use licensegen::license::types::{
@@ -12,6 +12,7 @@ use licensegen::license::types::{
 };
 use licensegen::license::crypto::validate_license;
 use licensegen::license::signer::sign;
+use licensegen::license::types::ValidationOutcome;
 use chrono::NaiveDate;
 use serde_json::json;
 use rsa::{RsaPrivateKey, RsaPublicKey};

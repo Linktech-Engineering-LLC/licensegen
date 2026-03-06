@@ -3,30 +3,27 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-05
+// Modified: 2026-03-06
 // Description: 
 // ============================================================================
-
-// System Libraries
 use mysql_async::Conn;
-use rsa::RsaPrivateKey;
-use std::path::PathBuf;
-use chrono::NaiveDate;
-// Project Libraries
+use std::path::{Path, PathBuf};
+use rsa::RsaPublicKey;
+
 use crate::db::writer::{insert_new_license_row, update_license_row};
 use crate::db::reader::load_license_bundle;
 use crate::license::evaluator::evaluate_license;
 use crate::license::payload::build_payload;
-use crate::license::crypto::{sign_payload};
+use crate::license::crypto::{sign_payload, load_private_key, validate_license};
 use crate::license::writer::write_license_file;
-use crate::license::types::LicenseDecision;
+use crate::license::types::{LicenseDecision, ValidationOutcome};
 use crate::util::datetime::compute_expiration;
 
 pub async fn generate_license(
     conn: &mut Conn,
     application_id: u64,
-    private_key: &RsaPrivateKey,
-    output_dir: &str,
+    private_key_path: &Path,
+    output_dir: &Path,
 ) -> anyhow::Result<(u64, PathBuf)> {
     // 1. Load all DB rows needed for this license
     let bundle = load_license_bundle(conn, application_id).await?;
@@ -54,7 +51,19 @@ pub async fn generate_license(
    )?;
 
     // 4. Sign the payload
-    let signed = sign_payload(&payload, private_key)?;
+    let private_key = load_private_key(private_key_path)?;
+    let public_key = RsaPublicKey::from(&private_key);
+    let signed = sign_payload(&payload, &private_key)?;
+
+    // 4b. Build wrapped JSON for validation
+    let signed_json = serde_json::json!({
+        "payload": serde_json::from_str::<serde_json::Value>(&signed.payload_json)
+            .expect("payload_json must be valid JSON"),
+        "signature": signed.signature,
+    }).to_string();
+
+    // 4c. Validate our own output
+    validate_license(&signed_json, &public_key).into_anyhow()?;
     update_license_row(conn, id, &signed).await?;
 
     // 5. Determine output path

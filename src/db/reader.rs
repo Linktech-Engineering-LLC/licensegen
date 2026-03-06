@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-05
+// Modified: 2026-03-06
 // Description: 
 // ============================================================================
 use mysql_async::{Row, Conn, params, prelude::*};
@@ -65,6 +65,34 @@ pub async fn fetch_application(
     Ok(app)
 }
 
+pub async fn fetch_address(
+    conn: &mut Conn,
+    adr_id: u64,
+) -> anyhow::Result<DbAddress>
+{
+    let row: Row = conn.exec_first(
+        "SELECT * FROM address WHERE id = ?",
+        (adr_id,)
+    ).await?
+     .ok_or_else(|| anyhow::anyhow!("Address not found"))?;
+
+    let address = DbAddress { 
+        id: row.get("id").unwrap(), 
+        maildrop: row.get("maildrop"), 
+        street: row.get("street"), 
+        suite: row.get("suite"), 
+        zip: row.get("zip").unwrap(), 
+        zip4: row.get("zip4"), 
+        city: row.get("city"), 
+        state: row.get("state"), 
+        county: row.get("county"), 
+        country: row.get("country").unwrap(), 
+        created: to_naive_datetime(row.get("created").unwrap()), 
+        updated: to_naive_datetime(row.get("updated").unwrap()), 
+    };
+    Ok(address)
+}
+
 pub async fn get_product_id_by_code(
     conn: &mut Conn,
     code: &str,
@@ -102,6 +130,7 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
 
     // 1. Load the application row
     let application = fetch_application(conn, application_id).await?;
+    println!("Fetched Application {:?}", application);
 
     // 2. Load edition (this contains product_id)
     let row: Row = conn.exec_first(
@@ -122,6 +151,7 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
         created: to_naive_datetime(row.get("created").unwrap()),
         updated: to_naive_datetime(row.get("updated").unwrap()),
     };
+    println!("Fetched Edition {:?}", edition);
 
     // 3. Load product using edition.product_id  ← FIXED
     let row: Row = conn.exec_first(
@@ -143,9 +173,11 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
         created: to_naive_datetime(row.get("created").unwrap()),
         updated: to_naive_datetime(row.get("updated").unwrap()),
     };
+    println!("Fetched Product {:?}", product);
+
     // 4. Load customer
     let row: Row = conn.exec_first(
-        "SELECT * WHERE id = ?",
+        "SELECT * from customers WHERE id = ?",
         (application.customer_id,)
     ).await?
      .ok_or_else(|| anyhow::anyhow!("Customer not found"))?;
@@ -162,32 +194,16 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
         created: to_naive_datetime(row.get("created").unwrap()), 
         updated: to_naive_datetime(row.get("updated").unwrap()),
     };
+    println!("Fetched Customer {:?}", customer);
 
     // 5. Load address
-    let row: Row = conn.exec_first(
-        "SELECT * FROM addresses WHERE id = ?",
-        (customer.address_id,)
-    ).await?
-     .ok_or_else(|| anyhow::anyhow!("Address not found"))?;
+    let address = fetch_address(conn, customer.address_id).await?;
+    println!("Fetched Address {:?}", address);
 
-    let address = DbAddress { 
-        id: row.get("id").unwrap(), 
-        maildrop: row.get("maildrop"), 
-        street: row.get("street"), 
-        suite: row.get("suite"), 
-        zip: row.get("zip").unwrap(), 
-        zip4: row.get("zip4"), 
-        city: row.get("city"), 
-        state: row.get("state"), 
-        county: row.get("county"), 
-        country: row.get("country").unwrap(), 
-        created: to_naive_datetime(row.get("created").unwrap()), 
-        updated: to_naive_datetime(row.get("updated").unwrap()), 
-    };
-
+    let zip_int: u32 = address.zip;
     let row: Row = conn.exec_first(
         "SELECT * FROM zipcodes WHERE zip = ?",
-        (address.zip,)
+        (zip_int,)
     ).await?
      .ok_or_else(|| anyhow::anyhow!("Zipcode not found"))?;
 
@@ -197,11 +213,12 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
         state: row.get("state").unwrap(), 
         county: row.get("county"), 
     };
+   println!("Fetched zipcode {:?}", zipcode);
 
     // 6. Try to load an existing license for this application
     let row: Row = conn.exec_first(
         "SELECT * FROM licenses WHERE application_id = ?",
-        (application_id,)
+        (application.id,)
     ).await?
      .ok_or_else(|| anyhow::anyhow!("License not found"))?;
 
@@ -229,6 +246,7 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
         validity_unit: None,
         validity_value: None,
     };
+   println!("Fetched License {:?}", license);
 
     Ok(LicenseBundle {
         application,

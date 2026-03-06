@@ -3,14 +3,15 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-05
+// Modified: 2026-03-06
 // Description: Entry point for licensegen.
 // ============================================================================
 
-use std::path::{self, PathBuf};
+use std::path::{self, PathBuf, Path};
 
 use licensegen::db::pool::init_pool;
-use licensegen::db::reader::fetch_application;
+use licensegen::db::reader::{fetch_address, fetch_application};
+use licensegen::db::types::DbAddress;
 use licensegen::config::Config;
 use licensegen::license::generator::generate_license;
 use licensegen::product::loader::{load_all_editions, load_all_products, load_application};
@@ -139,15 +140,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.get_conn().await?;
     let app = fetch_application(&mut conn, application_id).await?;
     println!("Fetched Application {}", app);
-    //let license = generate_license(&application)?;
-    //let license_id = sync_license(&pool, application_id, &license).await?;
-    //let (license_id, license_path) = generate_license(
-    //    &mut conn,
-    //    application_id,
-    //    &private_key,
-    //    &cfg.paths.output_dir,
-    //).await?;
-    //info!("License generated and synced with ID {}", license_id);
+    
+    let adr_id: u64 = 1;
+    let adr = fetch_address(&mut conn, adr_id).await?;
+    println!("Address Loaded {:?}", adr);
+
+    let private_key_path = Path::new(&cfg.paths.keypair_dir);
+    let output_dir_path = Path::new(&cfg.paths.output_dir);
+
+    let (license_id, license_path) = generate_license(
+        &mut conn,
+        application_id,
+        &private_key_path,
+        &output_dir_path,
+    ).await?;
+    info!("License generated and synced with ID {}", license_id);
     // End banner
     end_banner();
 

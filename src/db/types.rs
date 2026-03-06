@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-05
+// Modified: 2026-03-06
 // Description: Database Structures
 // ============================================================================
 
@@ -207,7 +207,6 @@ pub struct DbAddress {
     pub state: Option<String>,
     pub county: Option<String>,
     pub country: String,
-
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }

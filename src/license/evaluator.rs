@@ -3,14 +3,14 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-05
+// Modified: 2026-03-06
 // Description: 
 // ============================================================================
 
 use anyhow::Result;
 
 use crate::license::types::{LicenseBundle, LicenseDecision};
-use crate::license::evaluator_error::EvaluationError;
+use crate::license::errors::EvaluationError;
 
 pub fn parse_major(version: &str) -> Option<u8> {
     version.split('.')
