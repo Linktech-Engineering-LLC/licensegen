@@ -35,8 +35,8 @@ Logs/
 *.log
 
 # Licensegen data directories
-data/products/*/licenses/
-data/keys/*.pem
+data/
+
 
 # Defensive ignore for secrets
 *.vault
