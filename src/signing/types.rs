@@ -1,11 +1,12 @@
 // ============================================================================
-// Filename: licensegen/src/payload.rs
+// Filename: licensegen/src/signing/types.rs
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
-// Created: 2026-02-18
+// Created: 2026-03-07
 // Modified: 2026-03-07
-// Description: Defines the LicensePayload struct used for RSA signing.
+// Description: Structures required for creating the signatures
 // ============================================================================
+
 
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::Serialize;

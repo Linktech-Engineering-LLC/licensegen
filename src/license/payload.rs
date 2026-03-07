@@ -9,7 +9,7 @@
 use crate::db::types::{
     DbAddress, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
 };
-use crate::license::types::{
+use super::types::{
     AddressInfo, ApplicationInfo, CustomerInfo, EditionInfo, LicensePayload,
     ProductInfo, ValidityInfo,
 };
@@ -57,12 +57,6 @@ fn build_address_info(addr: &DbAddress, zip: &DbZipcode) -> anyhow::Result<Addre
     // line2: suite
     let line2 = addr.suite.clone();
 
-    // postal: ZIP or ZIP+4
-    let postal = match addr.zip4 {
-        Some(z4) => format!("{:05}-{:04}", addr.zip, z4),
-        None => format!("{:05}", addr.zip),
-    };
-
     // city/state: prefer customer-provided, fall back to zipcodes
     let city = addr.city.clone().unwrap_or_else(|| zip.city.clone());
     let state = addr.state.clone().unwrap_or_else(|| zip.state.clone());
@@ -72,8 +66,8 @@ fn build_address_info(addr: &DbAddress, zip: &DbZipcode) -> anyhow::Result<Addre
         line2,
         city,
         state,
-        postal,
-        country: addr.country.clone(),
+        postal: addr.zip.clone(),
+        country: addr.country.clone().unwrap_or_else(|| "USA".to_string()),
     })
 }
 

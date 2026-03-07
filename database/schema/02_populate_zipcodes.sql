@@ -1,5 +1,4 @@
 -- --------------------------------------------------------
--- Host:                         192.168.0.1
 -- Server version:               10.11.15-MariaDB - MariaDB package
 -- Server OS:                    Linux
 -- HeidiSQL Version:             12.15.0.7171

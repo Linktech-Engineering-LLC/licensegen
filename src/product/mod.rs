@@ -3,13 +3,10 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-04
+// Modified: 2026-03-07
 // Description:
 // ============================================================================
 
-pub mod edition;
 pub mod loader;
-pub mod product;
-pub mod request;
+pub mod types;
 pub mod sync;
-pub mod yaml;

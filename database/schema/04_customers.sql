@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS customers (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL,
   `company` varchar(255) DEFAULT NULL,
   `first` varchar(128) NOT NULL COMMENT 'First Name',
   `last` varchar(128) NOT NULL COMMENT 'Last Name',
@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS customers (
   UNIQUE KEY `email` (`email`),
   KEY `FK_customers_address` (`address_id`),
   CONSTRAINT `FK_customers_address` FOREIGN KEY (`address_id`) REFERENCES `address` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci |

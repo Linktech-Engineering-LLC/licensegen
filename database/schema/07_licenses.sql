@@ -1,6 +1,5 @@
-| CREATE TABLE IF NOT EXISTS `licenses` (
-| licenses | CREATE TABLE `licenses` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS `licenses` (
+  `id` bigint(20) unsigned NOT NULL,
   `application_id` bigint(20) unsigned NOT NULL,
   `edition_id` bigint(20) unsigned NOT NULL,
   `version` varchar(5) DEFAULT NULL,

@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-06
+// Modified: 2026-03-07
 // Description: Database Structures
 // ============================================================================
 
@@ -14,7 +14,7 @@ use serde::Serialize;
 use serde_json;
 use std::fmt;
 
-use crate::product::product::Product;
+use crate::product::types::Product;
 
 // ---------------------------------------------------------------------------
 // Display for DbApplication
@@ -200,13 +200,12 @@ pub struct DbAddress {
     pub street: Option<String>,
     pub suite: Option<String>,
 
-    pub zip: u32,                 // INT(5) UNSIGNED ZEROFILL
-    pub zip4: Option<u32>,        // INT(4) UNSIGNED ZEROFILL
+    pub zip: String,                 // INT(5) UNSIGNED ZEROFILL
 
     pub city: Option<String>,
     pub state: Option<String>,
     pub county: Option<String>,
-    pub country: String,
+    pub country: Option<String>,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }

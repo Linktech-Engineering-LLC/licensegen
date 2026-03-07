@@ -3,11 +3,11 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-05
+// Modified: 2026-03-07
 // Description: 
 // ============================================================================
 
-use mysql_async::{Conn, Error, params, prelude::*};
+use mysql_async::{Conn, Error, params, prelude::*, TxOpts};
 use rust_decimal::Decimal;
 
 use crate::db::types::{
@@ -20,8 +20,7 @@ use crate::license::types::{
     SignedLicense,
     ValidityInfo,
 };
-use crate::product::request::{Address, ContactSection, ApplicationRequest};
-use crate::product::edition::EditionInfo;
+use crate::product::types::{Address, ContactSection, ApplicationRequest, EditionInfo};
 use crate::util::datetime::{from_naive_date, opt};
 
 pub async fn write_license_to_db(
@@ -89,7 +88,7 @@ pub async fn resolve_or_insert_address(
             "street"   => &addr.street,
             "city"     => &addr.city,
             "state"    => &addr.state,
-            "zip"      => addr.zip,
+            "zip"      => &addr.zip,
         },
     ).await?;
 
@@ -99,8 +98,8 @@ pub async fn resolve_or_insert_address(
 
     conn.exec_drop(
         r#"
-        INSERT INTO address (maildrop, street, suite, city, state, county, country, zip, zip4)
-        VALUES (:maildrop, :street, :suite, :city, :state, :county, :country, :zip, :zip4)
+        INSERT INTO address (id, maildrop, street, suite, city, state, county, country, zip)
+        VALUES (:maildrop, :street, :suite, :city, :state, :county, :country, :zip)
         "#,
         params! {
             "maildrop" => &addr.maildrop,
@@ -110,8 +109,7 @@ pub async fn resolve_or_insert_address(
             "state"    => &addr.state,
             "county"   => &addr.county,
             "country"  => &addr.country,
-            "zip"      => addr.zip,
-            "zip4"     => addr.zip4,
+            "zip"      => &addr.zip,
         },
     ).await?;
 
@@ -257,13 +255,24 @@ pub async fn upsert_edition(
 pub async fn upsert_product(
     conn: &mut Conn,
     dbp: &DbProduct,
-) -> Result<bool, Error> {
-    conn.exec_drop(
+) -> Result<(bool, u64), Error> {
+    // Start transaction
+    let mut tx = conn.start_transaction(TxOpts::default()).await?;
+
+    // Determine next deterministic ID
+    let next_id: Option<u64> = tx
+        .exec_first("SELECT COALESCE(MAX(id), 0) + 1 FROM products", ())
+        .await?;
+
+    let next_id = next_id.unwrap_or(1);
+
+    // Perform deterministic upsert
+    tx.exec_drop(
         r#"
         INSERT INTO products
-            (name, code, version, payload_schema, features, editions, keypair_path, active)
+            (id, name, code, version, payload_schema, features, editions, keypair_path, active)
         VALUES
-            (:name, :code, :version, :payload_schema, :features, :editions, :keypair_path, :active)
+            (:id, :name, :code, :version, :payload_schema, :features, :editions, :keypair_path, :active)
         ON DUPLICATE KEY UPDATE
             payload_schema = VALUES(payload_schema),
             features = VALUES(features),
@@ -272,6 +281,7 @@ pub async fn upsert_product(
             active = VALUES(active)
         "#,
         params! {
+            "id" => next_id,
             "name" => &dbp.name,
             "code" => &dbp.code,
             "version" => &dbp.version,
@@ -283,10 +293,25 @@ pub async fn upsert_product(
         },
     ).await?;
 
-    let rows: Option<u64> = conn.exec_first("SELECT ROW_COUNT()", ()).await?;
+    // Determine if row changed
+    let rows: Option<u64> = tx.exec_first("SELECT ROW_COUNT()", ()).await?;
     let rows = rows.unwrap_or(0);
+    let changed = rows == 1 || rows == 2;
 
-    Ok(rows == 1 || rows == 2)
+    // Fetch product ID deterministically
+    let product_id: Option<u64> = tx.exec_first(
+        "SELECT id FROM products WHERE code = :code",
+        params! { "code" => &dbp.code },
+    ).await?;
+
+    let product_id = product_id.ok_or_else(|| {
+        Error::Other("Product not found after upsert".into())
+    })?;
+
+    // Commit
+    tx.commit().await?;
+
+    Ok((changed, product_id))
 }
 
 pub async fn insert_new_license_row(

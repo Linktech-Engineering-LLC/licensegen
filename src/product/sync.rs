@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-05
+// Modified: 2026-03-07
 // Description: Synchronization logic for product.yml → Products table.
 // ============================================================================
 
@@ -24,9 +24,7 @@ use crate::db::reader::{
     resolve_edition_id_by_sku,
     get_product_id_by_code
 };
-use crate::product::request::ApplicationRequest;
-use crate::product::product::Product;
-use crate::product::edition::EditionRoot;
+use super::types::{ApplicationRequest, EditionRoot, Product};
 use crate::util::datetime::{to_naive_date, to_naive_datetime};
 
 /// Returns:
@@ -50,13 +48,7 @@ pub async fn sync_product(
     log::debug!("  keypair_path: {}", dbp.keypair_path);
 
     // Perform upsert
-    let changed = upsert_product(&mut conn, &dbp).await?;
-
-    // Fetch product_id deterministically
-    let product_id = get_product_id_by_code(&mut conn, &dbp.code)
-        .await?
-        .ok_or_else(|| mysql_async::Error::Other("Product not found after sync".into()))?;
-
+    let (changed, product_id) = upsert_product(&mut conn, &dbp).await?;
 
     Ok((changed, product_id))
 }

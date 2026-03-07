@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-06
+// Modified: 2026-03-07
 // Description: Entry point for licensegen.
 // ============================================================================
 
@@ -118,11 +118,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Loading application from {:?}", app_path);
 
-    let application = load_application(app_path.to_str().unwrap())?;
-    info!("Application loaded: {}", application.request.name);
-
     // Sync application
     let mut conn = pool.get_conn().await?;
+
+    let application = load_application(&mut conn, app_path.to_str().unwrap()).await?;
+    info!("Application loaded: {}", application.request.name);
 
     let application_id = match sync_application(&mut conn, &application).await {
         Ok(id) => id,
@@ -145,16 +145,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let adr = fetch_address(&mut conn, adr_id).await?;
     println!("Address Loaded {:?}", adr);
 
-    let private_key_path = Path::new(&cfg.paths.keypair_dir);
-    let output_dir_path = Path::new(&cfg.paths.output_dir);
+    //let private_key_path = Path::new(&cfg.paths.keypair_dir);
+    //let output_dir_path = Path::new(&cfg.paths.output_dir);
 
-    let (license_id, license_path) = generate_license(
-        &mut conn,
-        application_id,
-        &private_key_path,
-        &output_dir_path,
-    ).await?;
-    info!("License generated and synced with ID {}", license_id);
+    //let (license_id, license_path) = generate_license(
+    //    &mut conn,
+    //    application_id,
+    //    &private_key_path,
+    //    &output_dir_path,
+    //).await?;
+    //info!("License generated and synced with ID {}", license_id);
+
     // End banner
     end_banner();
 

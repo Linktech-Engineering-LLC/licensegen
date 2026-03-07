@@ -3,49 +3,19 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-23
-// Modified: 2026-03-01
-// Description:
+// Modified: 2026-03-07
+// Description: Loads all the yaml configurations for product, editions, and 
+//                the application.
 // ============================================================================
 
-// System Libraries
+use mysql_async::Conn;
 use std::collections::HashMap;
-use std::fmt;
 use std::fs;
 use std::path::Path;
-// Project Libraries
-use super::edition::EditionRoot;
-use super::product::Product;
-use super::request::ApplicationRequest;
 
-impl fmt::Display for ProductError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl std::error::Error for ProductError {}
-
-#[derive(Debug)]
-pub enum ProductError {
-    ReadError(String),
-    YamlError(String),
-}
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AppError::Io(msg) => write!(f, "IO error: {}", msg),
-            AppError::Yaml(msg) => write!(f, "YAML error: {}", msg),
-            AppError::Invalid(msg) => write!(f, "Invalid data: {}", msg),
-        }
-    }
-}
-impl std::error::Error for AppError {}
-#[derive(Debug)]
-pub enum AppError {
-    Io(String),
-    Yaml(String),
-    Invalid(String),
-}
+use crate::db::reader::fetch_zip_data;
+use crate::util::helpers::{fill_if_empty, fill_if_empty_opt};
+use super::types::{ApplicationRequest, EditionRoot, Product, ProductError, AppError};
 
 pub fn load_all_products(products_dir: &str) -> Result<Vec<Product>, ProductError> {
     let mut products = Vec::new();
@@ -118,7 +88,10 @@ pub fn load_all_editions(
     Ok(editions)
 }
 
-pub fn load_application(path: &str) -> Result<ApplicationRequest, AppError> {
+pub async fn load_application(
+    conn: &mut Conn,
+    path: &str
+) -> Result<ApplicationRequest, AppError> {
     let contents = std::fs::read_to_string(path)
         .map_err(|e| AppError::Io(format!("Failed to read {}: {}", path, e)))?;
 
@@ -138,7 +111,20 @@ pub fn load_application(path: &str) -> Result<ApplicationRequest, AppError> {
     if req.request.name.is_empty() {
         return Err(AppError::Invalid("Missing app name".into()));
     }
-
+    if req.contact.address.zip.is_empty(){
+        return Err(AppError::Invalid("Missing required zip!".into()));
+    }
+    // Get the Zipcode Data from the address.zip
+    let zipcode = fetch_zip_data(conn, &req.contact.address.zip)
+        .await
+        .map_err(|e| AppError::Invalid(format!("ZIP lookup failed: {}", e)))?;
+    // Zipcode Data plugins
+    fill_if_empty(&mut req.contact.address.city, &zipcode.city);
+    fill_if_empty_opt(&mut req.contact.address.county, &zipcode.county);
+    fill_if_empty(&mut req.contact.address.state, &zipcode.state);
+    // global Data Plugin
+    fill_if_empty(&mut req.contact.address.country, "USA");
+    
     // Attach raw YAML for DB sync
     req.raw_yaml = contents;
 

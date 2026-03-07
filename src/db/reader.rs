@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-06
+// Modified: 2026-03-07
 // Description: 
 // ============================================================================
 use mysql_async::{Row, Conn, params, prelude::*};
@@ -82,15 +82,39 @@ pub async fn fetch_address(
         street: row.get("street"), 
         suite: row.get("suite"), 
         zip: row.get("zip").unwrap(), 
-        zip4: row.get("zip4"), 
         city: row.get("city"), 
         state: row.get("state"), 
         county: row.get("county"), 
-        country: row.get("country").unwrap(), 
+        country: row.get("country"), 
         created: to_naive_datetime(row.get("created").unwrap()), 
         updated: to_naive_datetime(row.get("updated").unwrap()), 
     };
     Ok(address)
+}
+
+pub async fn fetch_zip_data(
+    conn: &mut Conn,
+    zip: &String,
+) -> anyhow::Result<DbZipcode>
+{
+    let row: Row = conn.exec_first(
+        r#"
+        SELECT *
+        FROM zipcodes
+        WHERE zip = CAST(LEFT(:zip, 5) AS UNSIGNED)
+        "#,
+        params! { "zip" => zip },
+    ).await?
+     .ok_or_else(|| anyhow::anyhow!("Zipcode not found"))?;
+
+    let zipcode = DbZipcode { 
+        zip: row.get("zip").unwrap(), 
+        city: row.get("city").unwrap(), 
+        state: row.get("state").unwrap(), 
+        county: row.get("county"), 
+    };
+
+    Ok(zipcode)
 }
 
 pub async fn get_product_id_by_code(
@@ -200,20 +224,8 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
     let address = fetch_address(conn, customer.address_id).await?;
     println!("Fetched Address {:?}", address);
 
-    let zip_int: u32 = address.zip;
-    let row: Row = conn.exec_first(
-        "SELECT * FROM zipcodes WHERE zip = ?",
-        (zip_int,)
-    ).await?
-     .ok_or_else(|| anyhow::anyhow!("Zipcode not found"))?;
-
-    let zipcode = DbZipcode { 
-        zip: row.get("zip").unwrap(), 
-        city: row.get("city").unwrap(), 
-        state: row.get("state").unwrap(), 
-        county: row.get("county"), 
-    };
-   println!("Fetched zipcode {:?}", zipcode);
+    let zipcode = fetch_zip_data(conn, &address.zip).await?;
+    println!("Fetched zipcode {:?}", zipcode);
 
     // 6. Try to load an existing license for this application
     let row: Row = conn.exec_first(
