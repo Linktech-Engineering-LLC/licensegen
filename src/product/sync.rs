@@ -3,11 +3,11 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-07
+// Modified: 2026-03-09
 // Description: Synchronization logic for product.yml → Products table.
 // ============================================================================
 
-use mysql_async::{Pool, Row, params, prelude::*};
+use mysql_async::Pool;
 
 use crate::db::types::{
     DbApplication, 

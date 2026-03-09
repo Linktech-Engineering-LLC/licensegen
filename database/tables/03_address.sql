@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS addresses (
   `city` varchar(50) DEFAULT NULL,
   `state` varchar(50) DEFAULT NULL,
   `county` varchar(50) DEFAULT NULL,
-  `country` varchar(10) NOT NULL,
+  `country` varchar(10) DEFAULT NULL,
   `created` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`) USING BTREE,

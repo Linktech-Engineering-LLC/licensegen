@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-07
+// Modified: 2026-03-09
 // Description: 
 // ============================================================================
 use mysql_async::{Row, Conn, params, prelude::*};
@@ -11,6 +11,7 @@ use anyhow::Result;
 
 use crate::db::types::{
     DbAddress,
+    DbAddressView,
     DbApplication,
     DbCustomer,
     DbEdition,
@@ -68,27 +69,26 @@ pub async fn fetch_application(
 pub async fn fetch_address(
     conn: &mut Conn,
     adr_id: u64,
-) -> anyhow::Result<DbAddress>
+) -> anyhow::Result<DbAddressView>
 {
     let row: Row = conn.exec_first(
-        "SELECT * FROM address WHERE id = ?",
+        "SELECT * FROM v_address WHERE id = ?",
         (adr_id,)
     ).await?
      .ok_or_else(|| anyhow::anyhow!("Address not found"))?;
 
-    let address = DbAddress { 
-        id: row.get("id").unwrap(), 
-        maildrop: row.get("maildrop"), 
-        street: row.get("street"), 
-        suite: row.get("suite"), 
-        zip: row.get("zip").unwrap(), 
-        city: row.get("city"), 
-        state: row.get("state"), 
-        county: row.get("county"), 
-        country: row.get("country"), 
-        created: to_naive_datetime(row.get("created").unwrap()), 
-        updated: to_naive_datetime(row.get("updated").unwrap()), 
+    let address = DbAddressView {
+        id: row.get("id").unwrap(),
+        maildrop: row.get("maildrop").unwrap(),
+        street: row.get("street").unwrap(),
+        suite: row.get("suite").unwrap(),
+        zip: row.get("zip").unwrap(),
+        city: row.get("city").unwrap(),
+        state: row.get("state").unwrap(),
+        county: row.get("county").unwrap(),
+        country: row.get("country").unwrap(),
     };
+
     Ok(address)
 }
 

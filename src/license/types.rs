@@ -3,17 +3,18 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-06
+// Modified: 2026-03-09
 // Description: 
 // ============================================================================
 
 // System Libraries
 use chrono::NaiveDate;
+use rust_decimal::Decimal;
 use serde::{Serialize, Deserialize};
 use serde_json;
 // Project Libraries
 use crate::db::types::{
-    DbAddress,
+    DbAddressView,
     DbApplication,
     DbCustomer,
     DbEdition,
@@ -40,7 +41,7 @@ pub struct LicenseBundle {
     pub product: DbProduct,
     pub edition: DbEdition,
     pub customer: DbCustomer,
-    pub address: DbAddress,
+    pub address: DbAddressView,
     pub license: Option<DbLicense>,
     pub zipcode: DbZipcode,
     pub validity: ValidityInfo,
@@ -52,8 +53,8 @@ pub struct LicenseBundle {
 
 #[derive(Serialize, Deserialize)]
 pub struct AddressInfo {
-    pub line1: String,
-    pub line2: Option<String>,
+    pub line1: String,   // street or maildrop
+    pub line2: String,   // suite or ""
     pub city: String,
     pub state: String,
     pub postal: String,
@@ -62,13 +63,17 @@ pub struct AddressInfo {
 
 #[derive(Serialize, Deserialize)]
 pub struct ApplicationInfo {
+    pub name: String,
+    pub price: Decimal,
     pub received: NaiveDate,
     pub acquired: NaiveDate,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct CustomerInfo {
-    pub name: String,
+    pub first: String,
+    pub last: String,
+    pub company: String,
     pub email: String,
     pub address: AddressInfo,
 }
@@ -99,12 +104,11 @@ pub enum ValidityUnit{
 #[derive(Serialize, Deserialize)]
 pub struct ValidityInfo {
     pub issued: NaiveDate,
-    pub expires: Option<NaiveDate>,
-    pub valid_major: Option<u8>,
-    pub validity_value: Option<u16>,
-    pub validity_unit: Option<ValidityUnit>,
+    pub expires: NaiveDate,
+    pub major: u8,
+    pub validity_value: u8,
+    pub validity_unit: ValidityUnit,
 }
-
 #[derive(Serialize, Deserialize)]
 pub struct LicensePayload {
     pub product: ProductInfo,

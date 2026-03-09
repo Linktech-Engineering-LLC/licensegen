@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-07
+// Modified: 2026-03-09
 // Description: Database Structures
 // ============================================================================
 
@@ -215,4 +215,105 @@ pub struct DbZipcode {
     pub city: String,
     pub state: String,
     pub county: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DbAddressView {
+    pub id: u64,
+    pub maildrop: String,
+    pub street: String,
+    pub suite: String,
+    pub zip: String,
+    pub city: String,      // now non-null
+    pub state: String,     // now non-null
+    pub county: String,    // now non-null
+    pub country: String,   // now non-null
+}
+#[derive(Debug, Clone)]
+pub struct DbCustomerView {
+    pub id: u64,
+    pub company: String,
+    pub first: String,
+    pub last: String,
+    pub email: String,
+    pub phone: String,
+    pub notes: String,
+    pub address_id: u64,
+}
+#[derive(Debug, Clone)]
+pub struct DbEditionView {
+    pub id: u64,
+
+    // Product-level fields
+    pub product_name: String,
+    pub version: String,
+    pub editions: String,
+    pub payload_schema: String,
+    pub features: String,
+    pub keypair_path: String,
+    pub active: bool,
+
+    // Edition-level fields
+    pub edition_name: String,
+    pub sku: String,
+    pub edition_code: String,
+    pub metadata: String,
+    pub price: Decimal,
+    pub valid: bool,
+}
+#[derive(Debug, Clone)]
+pub struct DbApplicationView {
+    pub id: u64,
+    pub application_name: String,
+
+    // Customer fields
+    pub company: String,
+    pub first: String,
+    pub last: String,
+
+    // Edition fields
+    pub product_name: String,
+    pub edition_name: String,
+    pub sku: String,
+    pub edition_valid: bool,
+
+    // Commercial terms
+    pub application_price: Decimal,
+    pub major: u8,
+    pub validity_value: u8,
+    pub validity_unit: String,
+
+    // Metadata
+    pub raw_yaml: String,
+    pub received: NaiveDate,
+    pub acquired: NaiveDate,
+    pub status: String,
+}
+#[derive(Debug, Clone)]
+pub struct DbLicenseView {
+    pub id: u64,
+    pub version: String,
+    pub payload: String,
+    pub features: String,
+    pub signature: String,
+    pub issued: NaiveDate,
+    pub expires: NaiveDate,
+    pub revoked: bool,
+
+    // Application fields
+    pub application_name: String,
+    pub application_price: Decimal,
+    pub major: u8,
+    pub validity_value: u8,
+    pub validity_unit: String,
+
+    // Customer fields
+    pub company: String,
+    pub first: String,
+    pub last: String,
+
+    // Edition fields
+    pub product_name: String,
+    pub edition_name: String,
+    pub sku: String,
 }

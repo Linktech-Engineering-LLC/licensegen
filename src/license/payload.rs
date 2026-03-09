@@ -7,7 +7,7 @@
 // ============================================================================
 
 use crate::db::types::{
-    DbAddress, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
+    DbAddress, DbAddressView, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
 };
 use super::types::{
     AddressInfo, ApplicationInfo, CustomerInfo, EditionInfo, LicensePayload,
@@ -23,7 +23,7 @@ pub fn build_payload(
     product: &DbProduct,
     edition: &DbEdition,
     customer: &DbCustomer,
-    address: &DbAddress,
+    address: &DbAddressView,
     zipcode: &DbZipcode,
     validity: ValidityInfo,
 ) -> anyhow::Result<LicensePayload> {
@@ -46,7 +46,7 @@ pub fn build_payload(
 // Address builder
 // ----------------------------------------------------------------------------
 
-fn build_address_info(addr: &DbAddress, zip: &DbZipcode) -> anyhow::Result<AddressInfo> {
+fn build_address_info(addr: &DbAddressView, zip: &DbZipcode) -> anyhow::Result<AddressInfo> {
     // line1: PO Box or street
     let line1 = match (&addr.maildrop, &addr.street) {
         (Some(po), _) => format!("PO Box {}", po),
@@ -58,8 +58,8 @@ fn build_address_info(addr: &DbAddress, zip: &DbZipcode) -> anyhow::Result<Addre
     let line2 = addr.suite.clone();
 
     // city/state: prefer customer-provided, fall back to zipcodes
-    let city = addr.city.clone().unwrap_or_else(|| zip.city.clone());
-    let state = addr.state.clone().unwrap_or_else(|| zip.state.clone());
+    let city = addr.city.clone();
+    let state = addr.state.clone();
 
     Ok(AddressInfo {
         line1,
@@ -67,7 +67,7 @@ fn build_address_info(addr: &DbAddress, zip: &DbZipcode) -> anyhow::Result<Addre
         city,
         state,
         postal: addr.zip.clone(),
-        country: addr.country.clone().unwrap_or_else(|| "USA".to_string()),
+        country: addr.country.clone(),
     })
 }
 
