@@ -3,18 +3,21 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-09
+// Modified: 2026-03-10
 // Description: Database Structures
 // ============================================================================
 
 use chrono::{NaiveDate, NaiveDateTime};
 //use mysql_common::binlog::decimal::Decimal;
+use mysql_async::Row;
 use rust_decimal::Decimal;
 use serde::Serialize;
 use serde_json;
+use std::f32::consts::E;
 use std::fmt;
 
 use crate::product::types::Product;
+use crate::util::datetime::{to_naive_date, to_naive_datetime};
 
 // ---------------------------------------------------------------------------
 // Display for DbApplication
@@ -40,7 +43,7 @@ pub struct DbApplication {
     pub name: String,
     pub customer_id: u64,
     pub edition_id: u64,
-    pub price: Decimal,
+    pub price: Option<Decimal>,
     pub valid_major: Option<u8>,
     pub validity_value: u8,
     pub validity_unit: Option<String>,
@@ -55,7 +58,26 @@ pub struct DbApplication {
     pub updated: NaiveDateTime,
 
 }
-
+impl DbApplication {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").expect("id missing"),
+            name: row.get("name").expect("name missing"),
+            customer_id: row.get("customer_id").expect("customer_id missing"),
+            edition_id: row.get("edition_id").expect("edition_id missing"),
+            price: row.get("price"),
+            valid_major: row.get("valid_major"),
+            validity_value: row.get("validity_value").expect("validity_value missing"),
+            validity_unit: row.get("validity_unit"),
+            raw_yaml: row.get("raw_yaml").expect("raw_yaml missing"),
+            received: to_naive_date(row.get("received").expect("received missing")),
+            acquired: to_naive_date(row.get("acquired").expect("acquired missing")),
+            status: row.get("status").expect("status missing"),
+            created: to_naive_datetime(row.get("created").expect("created missing")),
+            updated: to_naive_datetime(row.get("updated").expect("updated missing")),
+        }
+    }
+}
 // ---------------------------------------------------------------------------
 // Licenses table
 // ---------------------------------------------------------------------------
@@ -80,7 +102,25 @@ pub struct DbLicense {
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
-
+impl DbLicense{
+    pub fn from_row(row: &Row) -> Self{
+        Self { id: row.get("id").unwrap(), 
+            application_id: row.get("application_id").unwrap(), 
+            edition_id: row.get("edition_id").unwrap(), 
+            paid: row.get("paid"), 
+            version: row.get("version"), 
+            payload: row.get("payload").unwrap(), 
+            features: row.get("features").unwrap(), 
+            signature: row.get("signature").unwrap(), 
+            issued: to_naive_date(row.get("issued").unwrap()), 
+            expires: row.get("expires").map(to_naive_date),
+            valid_major: row.get("valid_major"), 
+            revoked: row.get("revoked").unwrap(), 
+            created: to_naive_datetime(row.get("created").unwrap()), 
+            updated: to_naive_datetime(row.get("updated").unwrap()), 
+        }
+    }
+}
 // ---------------------------------------------------------------------------
 // Products table
 // ---------------------------------------------------------------------------
@@ -101,6 +141,24 @@ pub struct DbProduct {
 
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
+}
+
+impl DbProduct {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").unwrap(),
+            name: row.get("name").unwrap(),
+            code: row.get("code").unwrap(),
+            version: row.get("version"),
+            editions: row.get("editions"),
+            payload_schema: row.get("payload_schema").unwrap(),
+            features: row.get("features").unwrap(),
+            keypair_path: row.get("keypair_path").unwrap(),
+            active: row.get("active").unwrap(),
+            created: to_naive_datetime(row.get("created").unwrap()),
+            updated: to_naive_datetime(row.get("updated").unwrap()),
+        }
+    }
 }
 
 // Convert YAML Product → DbProduct row
@@ -170,6 +228,22 @@ pub struct DbEdition {
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
+impl DbEdition {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").expect("id missing"),
+            name: row.get("name").expect("name missing"),
+            product_id: row.get("product_id").expect("product_id missing"),
+            sku: row.get("sku").expect("sku missing"),
+            edition_code: row.get("edition_code").expect("edition_code missing"),
+            price: row.get("price"),
+            metadata: row.get("metadata").expect("metadata missing"),
+            valid: row.get("valid").unwrap(),
+            created: to_naive_datetime(row.get("created").expect("created missing")),
+            updated: to_naive_datetime(row.get("updated").expect("updated missing")),
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Customers table
@@ -187,6 +261,22 @@ pub struct DbCustomer {
     pub notes: Option<String>,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
+}
+impl DbCustomer {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").unwrap(),
+            company: row.get("company"),
+            first: row.get("first").unwrap(),
+            last: row.get("last").unwrap(),
+            email: row.get("email").unwrap(),
+            phone: row.get("phone").unwrap(),
+            address_id: row.get("address_id").unwrap(),
+            notes: row.get("notes"),
+            created: to_naive_datetime(row.get("created").unwrap()),
+            updated: to_naive_datetime(row.get("updated").unwrap()),
+        }
+    }
 }
 // ---------------------------------------------------------------------------
 // Addresses table
@@ -209,12 +299,40 @@ pub struct DbAddress {
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
+impl  DbAddress {
+    pub fn from_row(row: &Row) -> Self {
+        Self { 
+            id: row.get("id").unwrap(), 
+            maildrop: row.get("maildrop"), 
+            street: row.get("street"), 
+            suite: row.get("suite"), 
+            zip: row.get("zip").unwrap(), 
+            city: row.get("city"), 
+            state: row.get("state"), 
+            county: row.get("county"), 
+            country: row.get("country"), 
+            created: to_naive_datetime(row.get("created").unwrap()), 
+            updated: to_naive_datetime(row.get("updated").unwrap()), 
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DbZipcode {
     pub zip: u32,                 // INT(5) UNSIGNED ZEROFILL
     pub city: String,
     pub state: String,
     pub county: Option<String>,
+}
+impl DbZipcode{
+    pub fn from_row(row: &Row) -> Self{
+        Self { 
+            zip: row.get("zip").unwrap(), 
+            city: row.get("city").unwrap(), 
+            state: row.get("state").unwrap(), 
+            county: row.get("county"), 
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -246,6 +364,7 @@ pub struct DbEditionView {
 
     // Product-level fields
     pub product_name: String,
+    pub product_id: u64,
     pub version: String,
     pub editions: String,
     pub payload_schema: String,

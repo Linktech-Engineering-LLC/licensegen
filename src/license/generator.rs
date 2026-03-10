@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-07
+// Modified: 2026-03-10
 // Description: 
 // ============================================================================
 use mysql_async::Conn;
@@ -16,7 +16,7 @@ use crate::license::evaluator::evaluate_license;
 use crate::license::payload::build_payload;
 use crate::license::crypto::{sign_payload, load_private_key, validate_license};
 use crate::license::writer::write_license_file;
-use crate::license::types::{LicenseDecision, ValidationOutcome};
+use crate::license::types::LicenseDecision;
 use crate::util::datetime::compute_expiration;
 
 pub async fn generate_license(
@@ -47,7 +47,7 @@ pub async fn generate_license(
         &bundle.customer,
         &bundle.address,
         &bundle.zipcode,
-        bundle.validity,   // <-- required
+        bundle.validity.clone().expect("Validity required for payload"),   // <-- required
    )?;
 
     // 4. Sign the payload

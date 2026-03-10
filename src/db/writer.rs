@@ -3,12 +3,13 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-09
+// Modified: 2026-03-10
 // Description: 
 // ============================================================================
 
 use mysql_async::{Conn, Error, params, prelude::*, TxOpts, Transaction};
 use rust_decimal::Decimal;
+use anyhow::Result;
 
 use crate::db::types::{
     DbApplication,
@@ -348,81 +349,41 @@ pub async fn resolve_or_upsert_application(
     Ok(id)
 }
 
-pub async fn write_license_to_db(
-    conn: &mut Conn,
-    app: &DbApplication,
-    edition: &DbEdition,
-    signed: &SignedLicense,
-    validity: &ValidityInfo,
-) -> Result<u64, mysql_async::Error> {
-    // Insert license row
-    conn.exec_drop(
-        r#"
-        INSERT INTO licenses
-            (application_id, edition_id, payload, signature, issued, expires, valid_major)
-        VALUES
-            (:application_id, :edition_id, :payload, :signature, :issued, :expires, :valid_major)
-        "#,
-        params! {
-            "application_id" => app.id,
-            "edition_id"     => edition.id,
-            "payload"        => &signed.payload_json,
-            "signature"      => &signed.signature,
-            "issued"         => from_naive_date(validity.issued),
-            "expires"        => validity.expires.map(from_naive_date),
-            "valid_major" => opt(validity.valid_major),
-        },
-    )
-    .await?;
-
-    let license_id = conn
-        .last_insert_id()
-        .expect("INSERT into licenses did not produce a last_insert_id");
-
-    // Update application status
-    conn.exec_drop(
-        r#"
-        UPDATE applications
-        SET status = 'approved'
-        WHERE id = :id
-        "#,
-        params! {
-            "id" => app.id,
-        },
-    )
-    .await?;
-
-    Ok(license_id)
-}
-
-
-
-
-
-
 pub async fn insert_new_license_row(
     conn: &mut Conn,
     bundle: &LicenseBundle,
-) -> anyhow::Result<u64> {
+) ->Result<u64> {
 
-    conn.exec_drop(
+    // 1. Begin transaction
+    let mut tx = conn.start_transaction(TxOpts::default()).await?;
+
+    // 2. Compute deterministic ID using your helper
+    let new_id = next_deterministic_id(&mut tx, "licenses").await?;
+
+    // 3. Insert the new row using the deterministic ID
+    tx.exec_drop(
         r#"
         INSERT INTO licenses (
+            id,
             application_id,
             edition_id,
-            issued,
+            issued
         )
-        VALUES (:app, :edition, :issued)
+        VALUES (:id, :app, :edition, :issued)
         "#,
         params! {
-            "app" => bundle.application.id,
+            "id"      => new_id,
+            "app"     => bundle.application.id,
             "edition" => bundle.edition.id,
-            "issued" => from_naive_date(bundle.validity.issued),
+            "issued"  => from_naive_date(bundle.validity.as_ref().unwrap().issued),
         },
     ).await?;
 
-    let id = conn.last_insert_id().unwrap() as u64;
-    Ok(id)
+    // 4. Commit the transaction
+    tx.commit().await?;
+
+    // 5. Return deterministic ID
+    Ok(new_id)
 }
 
 pub async fn update_license_row(

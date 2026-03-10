@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-07
+// Modified: 2026-03-10
 // Description: 
 // ============================================================================
 use crate::license::types::{ValidityInfo, ValidityUnit};
@@ -11,7 +11,9 @@ use crate::license::types::{ValidityInfo, ValidityUnit};
 use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike, Duration};
 use mysql_common::value::Value;
 
-pub fn compute_expiration(v: &ValidityInfo) -> Option<NaiveDate> {
+pub fn compute_expiration(v: &Option<ValidityInfo>) -> Option<NaiveDate> {
+    let v = v.as_ref()?; // unwrap Option<ValidityInfo>
+
     match v.expires {
         Some(date) => Some(date),
         None => {

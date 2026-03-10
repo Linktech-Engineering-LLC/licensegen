@@ -7,7 +7,7 @@
 // ============================================================================
 
 use crate::db::types::{
-    DbAddress, DbAddressView, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
+    DbAddress, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
 };
 use super::types::{
     AddressInfo, ApplicationInfo, CustomerInfo, EditionInfo, LicensePayload,
@@ -23,7 +23,7 @@ pub fn build_payload(
     product: &DbProduct,
     edition: &DbEdition,
     customer: &DbCustomer,
-    address: &DbAddressView,
+    address: &DbAddress,
     zipcode: &DbZipcode,
     validity: ValidityInfo,
 ) -> anyhow::Result<LicensePayload> {
@@ -46,19 +46,15 @@ pub fn build_payload(
 // Address builder
 // ----------------------------------------------------------------------------
 
-fn build_address_info(addr: &DbAddressView, zip: &DbZipcode) -> anyhow::Result<AddressInfo> {
-    // line1: PO Box or street
+fn build_address_info(addr: &DbAddress, zip: &DbZipcode) -> anyhow::Result<AddressInfo> {
     let line1 = match (&addr.maildrop, &addr.street) {
-        (Some(po), _) => format!("PO Box {}", po),
-        (None, Some(street)) => street.clone(),
-        _ => anyhow::bail!("Address missing both maildrop and street"),
+        (Some(po), _) => Some(format!("PO Box {}", po)),
+        (None, Some(street)) => Some(street.clone()),
+        _ => None,
     };
 
-    // line2: suite
     let line2 = addr.suite.clone();
-
-    // city/state: prefer customer-provided, fall back to zipcodes
-    let city = addr.city.clone();
+    let city  = addr.city.clone();
     let state = addr.state.clone();
 
     Ok(AddressInfo {
@@ -77,8 +73,11 @@ fn build_address_info(addr: &DbAddressView, zip: &DbZipcode) -> anyhow::Result<A
 
 fn build_customer_info(cust: &DbCustomer, address: AddressInfo) -> CustomerInfo {
     CustomerInfo {
-        name: format!("{} {}", cust.first, cust.last),
+        first: cust.first.clone(),
+        last: cust.last.clone(),
+        company: cust.company.clone(),
         email: cust.email.clone(),
+        phone: Some(cust.phone.clone()),
         address,
     }
 }
@@ -119,6 +118,8 @@ fn build_product_info(p: &DbProduct) -> anyhow::Result<ProductInfo> {
 
 fn build_application_info(app: &DbApplication) -> ApplicationInfo {
     ApplicationInfo {
+        name: app.name.clone(),
+        price: app.price,
         received: app.received,
         acquired: app.acquired,
     }

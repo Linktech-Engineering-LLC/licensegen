@@ -3,11 +3,11 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-09
+// Modified: 2026-03-10
 // Description: 
 // ============================================================================
-use mysql_async::{Row, Conn, params, prelude::*};
-use anyhow::Result;
+use mysql_async::{Row, Conn, params, prelude::*, Transaction};
+use anyhow::{anyhow, Result};
 
 use crate::db::types::{
     DbAddress,
@@ -21,6 +21,18 @@ use crate::db::types::{
 };
 use crate::license::types::{LicenseBundle, ValidityInfo};
 use crate::util::datetime::{to_naive_date, to_naive_datetime, opt};
+
+pub async fn fetch_by_id<E>(
+    exec: &mut E,
+    source: &str,   // table or view name
+    id: u64,
+) -> mysql_async::Result<Option<Row>>
+where
+    E: mysql_async::prelude::Queryable,
+{
+    let query = format!("SELECT * FROM {} WHERE id = ?", source);
+    exec.exec_first(query, (id,)).await
+}
 
 pub async fn fetch_application(
     conn: &mut Conn,
@@ -150,115 +162,66 @@ pub async fn resolve_edition_id_by_sku(
     }
 }
 
-pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result<LicenseBundle> {
-
-    // 1. Load the application row
-    let application = fetch_application(conn, application_id).await?;
-    println!("Fetched Application {:?}", application);
-
-    // 2. Load edition (this contains product_id)
+pub async fn load_license_bundle(conn: &mut Conn, application_id: u64)
+    -> Result<LicenseBundle>
+{
+    // 1. Load everything except license
+    let row: Row = conn.exec_first(
+        "SELECT * FROM applications WHERE id = ?",
+        (application_id,)
+    ).await?
+     .ok_or_else(|| anyhow!("Application not found"))?;
+    let application = DbApplication::from_row(&row);
+    println!("Fetched application {}", application);
+   
     let row: Row = conn.exec_first(
         "SELECT * FROM editions WHERE id = ?",
         (application.edition_id,)
     ).await?
-    .ok_or_else(|| anyhow::anyhow!("Edition not found"))?;
+     .ok_or_else(|| anyhow!("Edition not found"))?;
+    let edition     = DbEdition::from_row(&row);
+    println!("Fetched edition {:?}", edition);
 
-    let edition = DbEdition {
-        id: row.get("id").unwrap(),
-        name: row.get("name").unwrap(),
-        product_id: row.get("product_id").unwrap(),
-        price: row.get("price"),
-        sku: row.get("sku").unwrap(),
-        edition_code: row.get("edition_code").unwrap(),
-        metadata: row.get("metadata").unwrap(),
-        valid: row.get("valid").unwrap(),
-        created: to_naive_datetime(row.get("created").unwrap()),
-        updated: to_naive_datetime(row.get("updated").unwrap()),
-    };
-    println!("Fetched Edition {:?}", edition);
-
-    // 3. Load product using edition.product_id  ← FIXED
     let row: Row = conn.exec_first(
         "SELECT * FROM products WHERE id = ?",
         (edition.product_id,)
     ).await?
-    .ok_or_else(|| anyhow::anyhow!("Product not found"))?;
+     .ok_or_else(|| anyhow!("Product not found"))?;
+    let product     = DbProduct::from_row(&row);
+    println!("Fetched product {:?}", product);
 
-    let product = DbProduct {
-        id: row.get("id").unwrap(),
-        name: row.get("name").unwrap(),
-        code: row.get("code").unwrap(),
-        version: row.get("version"),
-        editions: row.get("editions"),
-        payload_schema: row.get("payload_schema").unwrap(),
-        features: row.get("features").unwrap(),
-        keypair_path: row.get("keypair_path").unwrap(),
-        active: row.get("active").unwrap(),
-        created: to_naive_datetime(row.get("created").unwrap()),
-        updated: to_naive_datetime(row.get("updated").unwrap()),
-    };
-    println!("Fetched Product {:?}", product);
-
-    // 4. Load customer
     let row: Row = conn.exec_first(
-        "SELECT * from customers WHERE id = ?",
+        "SELECT * FROM customers WHERE id = ?",
         (application.customer_id,)
     ).await?
-     .ok_or_else(|| anyhow::anyhow!("Customer not found"))?;
+     .ok_or_else(|| anyhow!("Customer not found"))?;
+    let customer    = DbCustomer::from_row(&row);
+    println!("Fetched customer {:?}", customer);
 
-     let customer =DbCustomer { 
-        id: row.get("id").unwrap(),
-        company: row.get("company"), 
-        first: row.get("first").unwrap(), 
-        last: row.get("last").unwrap(), 
-        email: row.get("email").unwrap(), 
-        phone: row.get("phone").unwrap(), 
-        address_id: row.get("address_id").unwrap(), 
-        notes: row.get("notes"), 
-        created: to_naive_datetime(row.get("created").unwrap()), 
-        updated: to_naive_datetime(row.get("updated").unwrap()),
-    };
-    println!("Fetched Customer {:?}", customer);
-
-    // 5. Load address
-    let address = fetch_address(conn, customer.address_id).await?;
-    println!("Fetched Address {:?}", address);
+    let row: Row = conn.exec_first(
+        "SELECT * FROM address WHERE id = ?",
+        (customer.address_id,)
+    ).await?
+     .ok_or_else(|| anyhow!("Address not found"))?;
+    let address     = DbAddress::from_row(&row);
+    println!("Fetched address {:?}", address);
 
     let zipcode = fetch_zip_data(conn, &address.zip).await?;
     println!("Fetched zipcode {:?}", zipcode);
 
-    // 6. Try to load an existing license for this application
-    let row: Row = conn.exec_first(
-        "SELECT * FROM licenses WHERE application_id = ?",
-        (application.id,)
-    ).await?
-     .ok_or_else(|| anyhow::anyhow!("License not found"))?;
+    // 2. Load license (optional)
+    let license: Option<DbLicense> = conn
+        .exec_first("SELECT ...", (application_id,))
+        .await?
+        .map(|row: Row| DbLicense::from_row(&row));
 
-    let license = DbLicense {
-        id: row.get("id").unwrap(),
-        application_id: row.get("application_id").unwrap(),
-        edition_id: row.get("edition_id").unwrap(),
-        version: row.get("version"),
-        paid: row.get("paid"),
-        payload: row.get("payload").unwrap(),
-        features: row.get("features").unwrap(),
-        signature: row.get("signature").unwrap(),
-        issued: to_naive_date(row.get("issued").unwrap()),
-        expires: row.get("expires").map(|v| to_naive_date(v)),
-        valid_major: row.get("valid_major"),
-        revoked: row.get("revoked").unwrap(),
-        created: to_naive_datetime(row.get("created").unwrap()),
-        updated: to_naive_datetime(row.get("updated").unwrap()),
-    };
-
-    let validity = ValidityInfo {
-        issued: license.issued,
-        expires: license.expires,  
-        valid_major: license.valid_major,
+    let validity = license.as_ref().map(|l| ValidityInfo {
+        issued: l.issued,
+        expires: l.expires,
+        major: l.valid_major,
         validity_unit: None,
         validity_value: None,
-    };
-   println!("Fetched License {:?}", license);
+    });
 
     Ok(LicenseBundle {
         application,
@@ -266,8 +229,8 @@ pub async fn load_license_bundle(conn: &mut Conn, application_id: u64) -> Result
         edition,
         customer,
         address,
-        license: Some(license),
         zipcode,
+        license,
         validity,
     })
 }

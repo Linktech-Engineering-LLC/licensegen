@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-07
+// Modified: 2026-03-10
 // Description: Entry point for licensegen.
 // ============================================================================
 
@@ -11,13 +11,13 @@ use std::path::{self, PathBuf, Path};
 
 use licensegen::db::pool::init_pool;
 use licensegen::db::reader::{fetch_address, fetch_application};
-use licensegen::db::types::DbAddress;
 use licensegen::config::Config;
 use licensegen::license::generator::generate_license;
 use licensegen::product::loader::{load_all_editions, load_all_products, load_application};
 use licensegen::product::sync::{sync_application, sync_edition, sync_product};
 use licensegen::signing::loaders::load_keypair;
 use licensegen::signing::resolver::resolve_keypair_paths;
+use licensegen::util::helpers::expand_tilde;
 use licensegen::vault::types::{VaultError, VaultSecrets};
 use licensegen::vault::ansible::decrypt_with_ansible;
 
@@ -38,7 +38,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Loaded configuration from {:?}", cfg_path);
 
     // Decrypt vault
-    let yaml_str = decrypt_with_ansible(&cfg.vault.file, &cfg.vault.password_file)?;
+    let vault_file = expand_tilde(&cfg.vault.file);
+    let password_file = expand_tilde(&cfg.vault.password_file);
+    let yaml_str = decrypt_with_ansible(&vault_file, &password_file)?;
     info!("Vault decrypted successfully");
 
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
@@ -141,20 +143,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = fetch_application(&mut conn, application_id).await?;
     println!("Fetched Application {}", app);
     
-    let adr_id: u64 = 1;
-    let adr = fetch_address(&mut conn, adr_id).await?;
-    println!("Address Loaded {:?}", adr);
+    let private_key_path = Path::new(&cfg.paths.keypair_dir);
+    let output_dir_path = Path::new(&cfg.paths.output_dir);
 
-    //let private_key_path = Path::new(&cfg.paths.keypair_dir);
-    //let output_dir_path = Path::new(&cfg.paths.output_dir);
-
-    //let (license_id, license_path) = generate_license(
-    //    &mut conn,
-    //    application_id,
-    //    &private_key_path,
-    //    &output_dir_path,
-    //).await?;
-    //info!("License generated and synced with ID {}", license_id);
+    let (license_id, license_path) = generate_license(
+        &mut conn,
+        application_id,
+        &private_key_path,
+        &output_dir_path,
+    ).await?;
+    info!("License generated and synced with ID {}", license_id);
 
     // End banner
     end_banner();

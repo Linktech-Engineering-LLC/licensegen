@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-09
+// Modified: 2026-03-10
 // Description: 
 // ============================================================================
 
@@ -14,7 +14,7 @@ use serde::{Serialize, Deserialize};
 use serde_json;
 // Project Libraries
 use crate::db::types::{
-    DbAddressView,
+    DbAddress,
     DbApplication,
     DbCustomer,
     DbEdition,
@@ -41,10 +41,10 @@ pub struct LicenseBundle {
     pub product: DbProduct,
     pub edition: DbEdition,
     pub customer: DbCustomer,
-    pub address: DbAddressView,
+    pub address: DbAddress,
     pub license: Option<DbLicense>,
     pub zipcode: DbZipcode,
-    pub validity: ValidityInfo,
+    pub validity: Option<ValidityInfo>,
 }
 
 // ---------------------------------------------------------------------------
@@ -53,18 +53,18 @@ pub struct LicenseBundle {
 
 #[derive(Serialize, Deserialize)]
 pub struct AddressInfo {
-    pub line1: String,   // street or maildrop
-    pub line2: String,   // suite or ""
-    pub city: String,
-    pub state: String,
+    pub line1: Option<String>,   // street or maildrop
+    pub line2: Option<String>,   // suite or ""
+    pub city: Option<String>,
+    pub state: Option<String>,
     pub postal: String,
-    pub country: String,
+    pub country: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ApplicationInfo {
     pub name: String,
-    pub price: Decimal,
+    pub price: Option<Decimal>,
     pub received: NaiveDate,
     pub acquired: NaiveDate,
 }
@@ -73,8 +73,9 @@ pub struct ApplicationInfo {
 pub struct CustomerInfo {
     pub first: String,
     pub last: String,
-    pub company: String,
+    pub company: Option<String>,
     pub email: String,
+    pub phone: Option<String>,
     pub address: AddressInfo,
 }
 
@@ -94,20 +95,20 @@ pub struct ProductInfo {
     pub features: serde_json::Value,
     pub editions: serde_json::Value,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum ValidityUnit{
     Days,
     Months,
     Years,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ValidityInfo {
     pub issued: NaiveDate,
-    pub expires: NaiveDate,
-    pub major: u8,
-    pub validity_value: u8,
-    pub validity_unit: ValidityUnit,
+    pub expires: Option<NaiveDate>,
+    pub major: Option<u8>,
+    pub validity_value: Option<u32>,
+    pub validity_unit: Option<ValidityUnit>,
 }
 #[derive(Serialize, Deserialize)]
 pub struct LicensePayload {

@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-07
+// Modified: 2026-03-09
 // Description: Writes signed license artifacts to disk.
 // ============================================================================
 

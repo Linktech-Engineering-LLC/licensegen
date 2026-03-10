@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-07
+// Modified: 2026-03-10
 // Description: 
 // ============================================================================
 
@@ -54,13 +54,13 @@ pub fn evaluate_license(bundle: &LicenseBundle) -> Result<LicenseDecision, Evalu
     };
 
     let validity = &bundle.validity;
-    let valid_major = validity.valid_major;
+    let valid_major = validity.as_ref().and_then(|v| v.major);
 
     let product_major = bundle.product.version
         .as_deref()
         .and_then(parse_major);
 
-    let valid_major = validity.valid_major;
+    let valid_major = validity.as_ref().and_then(|v| v.major);
 
     if valid_major != product_major {
         return Err(EvaluationError::MajorVersionMismatch { 

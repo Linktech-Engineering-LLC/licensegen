@@ -1,6 +1,6 @@
 vault:
-  file: /home/doug/ansible/vault.yml
-  password_file: /home/doug/.ansible/password
+  file: ~/ansible/vault.yml
+  password_file: ~/.ansible/password
 
 paths:
   products_dir: data/products
