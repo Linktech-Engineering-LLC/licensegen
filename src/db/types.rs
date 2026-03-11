@@ -9,7 +9,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 //use mysql_common::binlog::decimal::Decimal;
-use mysql_async::Row;
+use mysql_async::{Row, Value};
 use rust_decimal::Decimal;
 use serde::Serialize;
 use serde_json;
@@ -17,21 +17,8 @@ use std::f32::consts::E;
 use std::fmt;
 
 use crate::product::types::Product;
-use crate::util::datetime::{to_naive_date, to_naive_datetime};
+use crate::util::datetime::{to_naive_date, to_naive_datetime, to_naive_date_opt};
 
-// ---------------------------------------------------------------------------
-// Display for DbApplication
-// ---------------------------------------------------------------------------
-
-impl fmt::Display for DbApplication {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "DbApplication {{ id: {}, name: {}, customer_id: {}, edition_id: {} }}",
-            self.id, self.name, self.customer_id, self.edition_id
-        )
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Applications table
@@ -78,6 +65,16 @@ impl DbApplication {
         }
     }
 }
+impl fmt::Display for DbApplication {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "DbApplication {{ id: {}, name: {}, customer_id: {}, edition_id: {} }}",
+            self.id, self.name, self.customer_id, self.edition_id
+        )
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Licenses table
 // ---------------------------------------------------------------------------
@@ -113,7 +110,7 @@ impl DbLicense{
             features: row.get("features"), 
             signature: row.get("signature"), 
             issued: to_naive_date(row.get("issued").unwrap()), 
-            expires: row.get("expires").map(to_naive_date),
+            expires: to_naive_date_opt(row.get("expires")),
             valid_major: row.get("valid_major"), 
             revoked: row.get("revoked").unwrap(), 
             created: to_naive_datetime(row.get("created").unwrap()), 

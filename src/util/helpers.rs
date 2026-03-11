@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-07
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: Helper Functions
 // ============================================================================
 
@@ -33,5 +33,16 @@ pub fn fill_if_empty_opt(target: &mut String, source: &Option<String>) {
         if let Some(val) = source {
             *target = val.clone();
         }
+    }
+}
+pub fn resolve_path(base: &Path, raw: &str) -> PathBuf {
+    // Expand ~
+    let expanded = shellexpand::tilde(raw).to_string();
+    let p = PathBuf::from(expanded);
+
+    if p.is_absolute() {
+        p
+    } else {
+        base.join(p)
     }
 }

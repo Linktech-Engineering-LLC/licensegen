@@ -17,7 +17,7 @@ use licensegen::product::loader::{load_all_editions, load_all_products, load_app
 use licensegen::product::sync::{sync_application, sync_edition, sync_product};
 use licensegen::signing::loaders::load_keypair;
 use licensegen::signing::resolver::resolve_keypair_paths;
-use licensegen::util::helpers::expand_tilde;
+use licensegen::util::helpers::{expand_tilde, resolve_path};
 use licensegen::vault::types::{VaultError, VaultSecrets};
 use licensegen::vault::ansible::decrypt_with_ansible;
 
@@ -33,13 +33,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load configuration
 
-    let cfg_path = format!("{}/licensegen.yml", env!("CARGO_MANIFEST_DIR"));
+    let cfg_path = PathBuf::from(format!("{}/licensegen.yml", env!("CARGO_MANIFEST_DIR")));
+    let cfg_dir = cfg_path.parent().unwrap().to_path_buf();
     let cfg = Config::load(&cfg_path)?;
     info!("Loaded configuration from {:?}", cfg_path);
 
     // Decrypt vault
-    let vault_file = expand_tilde(&cfg.vault.file);
-    let password_file = expand_tilde(&cfg.vault.password_file);
+    //let vault_file = expand_tilde(&cfg.vault.file);
+    //let password_file = expand_tilde(&cfg.vault.password_file);
+    let vault_file       = resolve_path(&cfg_dir, &cfg.vault.file);
+    let password_file    = resolve_path(&cfg_dir, &cfg.vault.password_file);
     let yaml_str = decrypt_with_ansible(&vault_file, &password_file)?;
     info!("Vault decrypted successfully");
 
@@ -143,14 +146,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = fetch_application(&mut conn, application_id).await?;
     println!("Fetched Application {:?}", app);
     
-    let private_key_path = Path::new(&cfg.paths.keypair_dir);
-    let output_dir_path = Path::new(&cfg.paths.output_dir);
+    let keypair_dir      = resolve_path(&cfg_dir, &cfg.paths.keypair_dir);
+    let output_dir       = resolve_path(&cfg_dir, &cfg.paths.output_dir);
 
     let (license_id, license_path) = generate_license(
         &mut conn,
         application_id,
-        &private_key_path,
-        &output_dir_path,
+        &keypair_dir,
+        &output_dir,
     ).await?;
     info!("License generated and synced with ID {}", license_id);
 

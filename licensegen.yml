@@ -2,8 +2,22 @@ vault:
   file: ~/ansible/vault.yml
   password_file: ~/.ansible/password
 
+#paths:
+#  products_dir: data/products
+#  application_file: data/license.yml
+#  keypair_dir: data/keys
+#  output_dir: data/products
+
 paths:
+  # Root where all products live
   products_dir: data/products
-  application_file: data/license.yml
-  keypair_dir: data/keys
-  output_dir: data/products
+
+  # Under each product:
+  product_file: product.yml
+
+  # Under each product, where user license applications live:
+  applications_subdir: applications/user
+
+  # Inside each user folder:
+  application_file: application.yml
+  license_file: license.json

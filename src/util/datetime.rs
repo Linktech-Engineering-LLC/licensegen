@@ -86,7 +86,9 @@ pub fn to_naive_date(v: Value) -> NaiveDate {
         _ => panic!("Expected MySQL DATE value"),
     }
 }
-
+pub fn to_naive_date_opt(v: Option<Value>) -> Option<NaiveDate> {
+    v.map(to_naive_date)
+}
 pub fn to_naive_datetime(v: Value) -> NaiveDateTime {
     match v {
         Value::Date(year, month, day, hour, min, sec, micros) => {

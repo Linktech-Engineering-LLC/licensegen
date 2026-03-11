@@ -49,12 +49,13 @@ pub async fn generate_license(
         &bundle.address,
         &bundle.zipcode,
         validity,
-   )?;
-
+    )?;
+    println!("Private key path: {:?}", private_key_path);
     // 4. Sign the payload
     let private_key = load_private_key(private_key_path)?;
     let public_key = RsaPublicKey::from(&private_key);
     let signed = sign_payload(&payload, &private_key)?;
+    println!("Private key, public key, signed: {:?}, {:?}, {:?}", private_key, public_key, signed);
 
     // 4b. Build wrapped JSON for validation
     let signed_json = serde_json::json!({
@@ -62,7 +63,7 @@ pub async fn generate_license(
             .expect("payload_json must be valid JSON"),
         "signature": signed.signature,
     }).to_string();
-    println!("Signed License: {}", signed_json);
+
     // 4c. Validate our own output
     validate_license(&signed_json, &public_key).into_anyhow()?;
     update_license_row(conn, id, &signed).await?;
