@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: Entry point for licensegen.
 // ============================================================================
 
@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------------------------------------
     let mut conn = pool.get_conn().await?;
     let app = fetch_application(&mut conn, application_id).await?;
-    println!("Fetched Application {}", app);
+    println!("Fetched Application {:?}", app);
     
     let private_key_path = Path::new(&cfg.paths.keypair_dir);
     let output_dir_path = Path::new(&cfg.paths.output_dir);

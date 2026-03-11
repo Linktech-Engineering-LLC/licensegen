@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: 
 // ============================================================================
 use mysql_async::Conn;
@@ -12,7 +12,7 @@ use rsa::RsaPublicKey;
 
 use crate::db::writer::{insert_new_license_row, update_license_row};
 use crate::db::reader::load_license_bundle;
-use crate::license::evaluator::evaluate_license;
+use crate::license::evaluator::{determine_validity, evaluate_license};
 use crate::license::payload::build_payload;
 use crate::license::crypto::{sign_payload, load_private_key, validate_license};
 use crate::license::writer::write_license_file;
@@ -38,6 +38,7 @@ pub async fn generate_license(
             insert_new_license_row(conn, &bundle).await?
         }
     };
+    let validity = determine_validity(&bundle.application);
 
     // 3. Build the canonical payload
     let payload = build_payload(
@@ -47,7 +48,7 @@ pub async fn generate_license(
         &bundle.customer,
         &bundle.address,
         &bundle.zipcode,
-        bundle.validity.clone().expect("Validity required for payload"),   // <-- required
+        validity,
    )?;
 
     // 4. Sign the payload
@@ -61,7 +62,7 @@ pub async fn generate_license(
             .expect("payload_json must be valid JSON"),
         "signature": signed.signature,
     }).to_string();
-
+    println!("Signed License: {}", signed_json);
     // 4c. Validate our own output
     validate_license(&signed_json, &public_key).into_anyhow()?;
     update_license_row(conn, id, &signed).await?;

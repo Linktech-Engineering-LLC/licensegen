@@ -3,10 +3,10 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: 
 // ============================================================================
-use crate::license::types::{ValidityInfo, ValidityUnit};
+use crate::license::types::{LicenseBundle, ValidityInfo, ValidityUnit};
 
 use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike, Duration};
 use mysql_common::value::Value;
@@ -21,7 +21,9 @@ pub fn compute_expiration(v: &Option<ValidityInfo>) -> Option<NaiveDate> {
             let unit = v.validity_unit.as_ref()?;
 
             let days = match unit {
+                ValidityUnit::NoExpiration => value * 0,
                 ValidityUnit::Days => value,
+                ValidityUnit::Weeks => value * 7,
                 ValidityUnit::Months => value * 30,
                 ValidityUnit::Years => value * 365,
             };
@@ -30,7 +32,16 @@ pub fn compute_expiration(v: &Option<ValidityInfo>) -> Option<NaiveDate> {
         }
     }
 }
+pub fn determine_issued(bundle: &LicenseBundle) -> NaiveDate {
+    // 1. If the YAML provided an explicit validity block, use that.
+    if let Some(v) = &bundle.validity {
+        return v.issued;
+    }
 
+    // 2. Otherwise fall back to the earliest canonical timestamp.
+    //    "received" is the first moment the system knows about the application.
+    bundle.application.received
+}
 pub fn from_naive_date(d: NaiveDate) -> Value {
     Value::Date(
         d.year() as u16,

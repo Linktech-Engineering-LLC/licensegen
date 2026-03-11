@@ -1,6 +1,7 @@
 CREATE OR REPLACE VIEW v_editions AS
 SELECT 
     e.id AS id,
+    e.product_id as product_id,
     p.`name` AS product_name,
     COALESCE(p.version, "") as `version`,
     COALESCE(p.editions, "") as editions,

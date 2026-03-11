@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: Database Structures
 // ============================================================================
 
@@ -43,16 +43,16 @@ pub struct DbApplication {
     pub name: String,
     pub customer_id: u64,
     pub edition_id: u64,
-    pub price: Option<Decimal>,
+    pub price: Decimal,
     pub valid_major: Option<u8>,
-    pub validity_value: u8,
+    pub validity_value: u16,
     pub validity_unit: Option<String>,
     pub raw_yaml: String,
 
     pub received: NaiveDate,
     pub acquired: NaiveDate,
 
-    pub status: String,
+    pub status: Option<String>,
 
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
@@ -65,10 +65,10 @@ impl DbApplication {
             name: row.get("name").expect("name missing"),
             customer_id: row.get("customer_id").expect("customer_id missing"),
             edition_id: row.get("edition_id").expect("edition_id missing"),
-            price: row.get("price"),
-            valid_major: row.get("valid_major"),
+            price: row.get("price").expect("price missing"),
+            valid_major: row.get("valid_major").expect(("valid_major missing")),
             validity_value: row.get("validity_value").expect("validity_value missing"),
-            validity_unit: row.get("validity_unit"),
+            validity_unit: row.get("validity_unit").expect("validity_unit missing"),
             raw_yaml: row.get("raw_yaml").expect("raw_yaml missing"),
             received: to_naive_date(row.get("received").expect("received missing")),
             acquired: to_naive_date(row.get("acquired").expect("acquired missing")),
@@ -90,9 +90,9 @@ pub struct DbLicense {
     pub paid: Option<Decimal>,
 
     pub version: Option<String>,   // VARCHAR(5)
-    pub payload: String,           // LONGTEXT JSON
-    pub features: String,          // LONGTEXT JSON
-    pub signature: String,         // TEXT (base64 or hex)
+    pub payload: Option<String>,           // LONGTEXT JSON
+    pub features: Option<String>,          // LONGTEXT JSON
+    pub signature: Option<String>,         // TEXT (base64 or hex)
 
     pub issued: NaiveDate,
     pub expires: Option<NaiveDate>,
@@ -109,9 +109,9 @@ impl DbLicense{
             edition_id: row.get("edition_id").unwrap(), 
             paid: row.get("paid"), 
             version: row.get("version"), 
-            payload: row.get("payload").unwrap(), 
-            features: row.get("features").unwrap(), 
-            signature: row.get("signature").unwrap(), 
+            payload: row.get("payload"), 
+            features: row.get("features"), 
+            signature: row.get("signature"), 
             issued: to_naive_date(row.get("issued").unwrap()), 
             expires: row.get("expires").map(to_naive_date),
             valid_major: row.get("valid_major"), 
@@ -303,14 +303,14 @@ impl  DbAddress {
     pub fn from_row(row: &Row) -> Self {
         Self { 
             id: row.get("id").unwrap(), 
-            maildrop: row.get("maildrop"), 
-            street: row.get("street"), 
-            suite: row.get("suite"), 
-            zip: row.get("zip").unwrap(), 
-            city: row.get("city"), 
-            state: row.get("state"), 
-            county: row.get("county"), 
-            country: row.get("country"), 
+            maildrop: row.get("maildrop").expect("maildrop missing"), 
+            street: row.get("street").expect("street missing"), 
+            suite: row.get("suite").expect(("suite missing")), 
+            zip: row.get("zip").expect("zip missing"), 
+            city: row.get("city").expect("city missing"), 
+            state: row.get("state").expect("state missing"), 
+            county: row.get("county").expect("county missing"), 
+            country: row.get("country").expect("country missing"), 
             created: to_naive_datetime(row.get("created").unwrap()), 
             updated: to_naive_datetime(row.get("updated").unwrap()), 
         }
@@ -347,6 +347,22 @@ pub struct DbAddressView {
     pub county: String,    // now non-null
     pub country: String,   // now non-null
 }
+impl  DbAddressView {
+    pub fn from_row(row: &Row) -> Self {
+        Self { 
+            id: row.get("id").unwrap(), 
+            maildrop: row.get("maildrop").unwrap(), 
+            street: row.get("street").unwrap(), 
+            suite: row.get("suite").unwrap(), 
+            zip: row.get("zip").unwrap(), 
+            city: row.get("city").unwrap(), 
+            state: row.get("state").unwrap(), 
+            county: row.get("county").unwrap(), 
+            country: row.get("country").unwrap(), 
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DbCustomerView {
     pub id: u64,
@@ -358,6 +374,21 @@ pub struct DbCustomerView {
     pub notes: String,
     pub address_id: u64,
 }
+impl DbCustomerView {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").unwrap(),
+            company: row.get("company").unwrap(),
+            first: row.get("first").unwrap(),
+            last: row.get("last").unwrap(),
+            email: row.get("email").unwrap(),
+            phone: row.get("phone").unwrap(),
+            address_id: row.get("address_id").unwrap(),
+            notes: row.get("notes").unwrap(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DbEditionView {
     pub id: u64,
@@ -380,12 +411,36 @@ pub struct DbEditionView {
     pub price: Decimal,
     pub valid: bool,
 }
+impl DbEditionView {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").unwrap(),
+            product_name: row.get("product_name").unwrap(),
+            product_id: row.get("product_id").unwrap(),
+            version: row.get("version").unwrap(),
+            editions: row.get("editions").unwrap(),
+            payload_schema: row.get("payload_schema").unwrap(),
+            features: row.get("features").unwrap(),
+            keypair_path: row.get("keypair_path").unwrap(),
+            active: row.get("active").unwrap(),
+            edition_name: row.get("edition_name").unwrap(),
+            sku: row.get("sku").unwrap(),
+            edition_code: row.get("edition_code").unwrap(),
+            metadata: row.get("metadata").expect("metadata missing"),
+            price: row.get("price").unwrap(),
+            valid: row.get("valid").unwrap(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DbApplicationView {
     pub id: u64,
     pub application_name: String,
+    pub edition_id: u64,
 
     // Customer fields
+    pub customer_id: u64,
     pub company: String,
     pub first: String,
     pub last: String,
@@ -399,7 +454,7 @@ pub struct DbApplicationView {
     // Commercial terms
     pub application_price: Decimal,
     pub major: u8,
-    pub validity_value: u8,
+    pub validity_value: u16,
     pub validity_unit: String,
 
     // Metadata
@@ -408,6 +463,32 @@ pub struct DbApplicationView {
     pub acquired: NaiveDate,
     pub status: String,
 }
+impl DbApplicationView {
+    pub fn from_row(row: &Row) -> Self {
+        Self {
+            id: row.get("id").unwrap(),
+            application_name: row.get("application_name").unwrap(),
+            edition_id: row.get("edition_id").unwrap(),
+            customer_id: row.get("customer_id").unwrap(),
+            company: row.get("company").unwrap(),
+            first: row.get("first").unwrap(),
+            last: row.get("last").unwrap(),
+            product_name: row.get("product_name").unwrap(),
+            edition_name: row.get("edition_name").unwrap(),
+            sku: row.get("sku").unwrap(),
+            edition_valid: row.get("edition_valid").unwrap(),
+            application_price: row.get("application_price").unwrap(),
+            major: row.get("major").unwrap(),
+            validity_value: row.get("validity_value").unwrap(),
+            validity_unit: row.get("validity_unit").unwrap(),
+            raw_yaml: row.get("raw_yaml").unwrap(),
+            received: to_naive_date(row.get("received").unwrap()),
+            acquired: to_naive_date(row.get("acquired").unwrap()),
+            status: row.get("status").unwrap(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DbLicenseView {
     pub id: u64,

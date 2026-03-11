@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-03
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: 
 // ============================================================================
 
@@ -22,7 +22,7 @@ use crate::license::types::{
     ValidityInfo,
 };
 use crate::product::types::{Address, ContactSection, ApplicationRequest, EditionInfo};
-use crate::util::datetime::{from_naive_date, opt};
+use crate::util::datetime::{from_naive_date, determine_issued};
 
 pub async fn next_deterministic_id(
     tx: &mut Transaction<'_>,
@@ -359,7 +359,7 @@ pub async fn insert_new_license_row(
 
     // 2. Compute deterministic ID using your helper
     let new_id = next_deterministic_id(&mut tx, "licenses").await?;
-
+    let issued = determine_issued(&bundle);
     // 3. Insert the new row using the deterministic ID
     tx.exec_drop(
         r#"
@@ -375,13 +375,13 @@ pub async fn insert_new_license_row(
             "id"      => new_id,
             "app"     => bundle.application.id,
             "edition" => bundle.edition.id,
-            "issued"  => from_naive_date(bundle.validity.as_ref().unwrap().issued),
+            "issued"  => from_naive_date(issued),
         },
     ).await?;
 
     // 4. Commit the transaction
     tx.commit().await?;
-
+    println!("License ID: {}", new_id);
     // 5. Return deterministic ID
     Ok(new_id)
 }

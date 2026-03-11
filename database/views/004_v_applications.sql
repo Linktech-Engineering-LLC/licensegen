@@ -2,8 +2,10 @@ CREATE OR REPLACE VIEW v_applications AS
 SELECT 
     a.id AS id,
     a.name AS application_name,
+    a.edition_id as edition_id,
 
     -- Customer fields (already COALESCE’d in v_customers)
+    a.customer_id as customer_id,
     c.company AS company,
     c.first AS first,
     c.last AS last,
@@ -15,7 +17,7 @@ SELECT
     e.valid AS edition_valid,
 
     -- Application commercial terms
-    a.price AS application_price,
+    COALESCE(a.price, 0.00) AS application_price,
     COALESCE(a.valid_major, 0) AS major,
     a.validity_value AS validity_value,
     a.validity_unit AS validity_unit,

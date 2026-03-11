@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
-// Modified: 2026-03-10
+// Modified: 2026-03-11
 // Description: 
 // ============================================================================
 
@@ -15,8 +15,11 @@ use serde_json;
 // Project Libraries
 use crate::db::types::{
     DbAddress,
+    DbAddressView,
     DbApplication,
+    DbApplicationView,
     DbCustomer,
+    DbCustomerView,
     DbEdition,
     DbLicense,
     DbProduct,
@@ -35,7 +38,7 @@ pub enum LicenseDecision {
 // ---------------------------------------------------------------------------
 // Pipeline bundle (not a DB table)
 // ---------------------------------------------------------------------------
-
+#[derive(Debug)]
 pub struct LicenseBundle {
     pub application: DbApplication,
     pub product: DbProduct,
@@ -64,7 +67,7 @@ pub struct AddressInfo {
 #[derive(Serialize, Deserialize)]
 pub struct ApplicationInfo {
     pub name: String,
-    pub price: Option<Decimal>,
+    pub price: Decimal,
     pub received: NaiveDate,
     pub acquired: NaiveDate,
 }
@@ -95,19 +98,33 @@ pub struct ProductInfo {
     pub features: serde_json::Value,
     pub editions: serde_json::Value,
 }
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ValidityUnit{
     Days,
+    Weeks,
     Months,
     Years,
+    NoExpiration,
 }
-
-#[derive(Serialize, Deserialize, Clone)]
+impl ValidityUnit {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "days"           => Some(Self::Days),
+            "weeks"          => Some(Self::Weeks),
+            "months"         => Some(Self::Months),
+            "years"          => Some(Self::Years),
+            "no expiration"  => Some(Self::NoExpiration),
+            ""               => None,
+            _                => None,
+        }
+    }
+}
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ValidityInfo {
     pub issued: NaiveDate,
     pub expires: Option<NaiveDate>,
     pub major: Option<u8>,
-    pub validity_value: Option<u32>,
+    pub validity_value: Option<u16>,
     pub validity_unit: Option<ValidityUnit>,
 }
 #[derive(Serialize, Deserialize)]

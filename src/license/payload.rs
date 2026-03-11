@@ -7,7 +7,11 @@
 // ============================================================================
 
 use crate::db::types::{
-    DbAddress, DbApplication, DbCustomer, DbEdition, DbProduct, DbZipcode,
+    DbAddress,
+    DbApplication, 
+    DbCustomer, DbCustomerView,
+    DbEdition,
+    DbProduct, DbZipcode,
 };
 use super::types::{
     AddressInfo, ApplicationInfo, CustomerInfo, EditionInfo, LicensePayload,
