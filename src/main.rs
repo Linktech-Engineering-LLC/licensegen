@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-11
+// Modified: 2026-03-12
 // Description: Entry point for licensegen.
 // ============================================================================
 
@@ -18,8 +18,9 @@ use licensegen::product::sync::{sync_application, sync_edition, sync_product};
 use licensegen::signing::loaders::load_keypair;
 use licensegen::signing::resolver::resolve_keypair_paths;
 use licensegen::util::helpers::{expand_tilde, resolve_path};
-use licensegen::vault::types::{VaultError, VaultSecrets};
 use licensegen::vault::ansible::decrypt_with_ansible;
+use licensegen::vault::loader::load_vault;
+use licensegen::vault::types::{VaultError, VaultSecrets};
 
 use log::{debug, error, info};
 use logger::{end_banner, init, start_banner};
@@ -37,14 +38,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cfg_dir = cfg_path.parent().unwrap().to_path_buf();
     let cfg = Config::load(&cfg_path)?;
     info!("Loaded configuration from {:?}", cfg_path);
+    println!("Configuration contains: {:?}", cfg);
+    //std::process::exit(0);
 
     // Decrypt vault
     //let vault_file = expand_tilde(&cfg.vault.file);
     //let password_file = expand_tilde(&cfg.vault.password_file);
-    let vault_file       = resolve_path(&cfg_dir, &cfg.vault.file);
-    let password_file    = resolve_path(&cfg_dir, &cfg.vault.password_file);
+    let (vault_file,password_file) = load_vault(&cfg, &cfg_dir)?;
     let yaml_str = decrypt_with_ansible(&vault_file, &password_file)?;
     info!("Vault decrypted successfully");
+    println!("vault and password files: {:?}, {:?}",vault_file, password_file);
+    std::process::exit(0);
 
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
     let app_key = env!("CARGO_PKG_NAME").to_lowercase();
@@ -147,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Fetched Application {:?}", app);
     
     let keypair_dir      = resolve_path(&cfg_dir, &cfg.paths.keypair_dir);
-    let output_dir       = resolve_path(&cfg_dir, &cfg.paths.output_dir);
+    let output_dir       = resolve_path(&cfg_dir, &cfg.paths.applications_subdir);
 
     let (license_id, license_path) = generate_license(
         &mut conn,

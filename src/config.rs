@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-11
+// Modified: 2026-03-12
 // Description: Configuration loader for licensegen.yml.
 // ============================================================================
 
@@ -35,7 +35,7 @@ pub enum ConfigError {
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub vault: VaultConfig,
-    pub paths: PathConfig,
+    pub paths: PathsConfig,
     pub db: Option<DbConfig>,
 }
 
@@ -46,11 +46,19 @@ pub struct VaultConfig {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PathConfig {
-    pub products_dir: String,
-    pub application_file: String,
+pub struct PathsConfig {
+    pub root_dir: String,
     pub keypair_dir: String,
-    pub output_dir: String,
+    pub products_dir: String,
+
+    pub product_file: String,
+    pub editions_subdir: String,
+
+    pub edition_file: String,
+    pub applications_subdir: String,
+
+    pub application_file: String,
+    pub license_file: String,
 }
 
 #[derive(Debug, Deserialize)]

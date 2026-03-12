@@ -3,6 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
+// Modified: 2026-03-12
 // Description: Canonical payload builder for licensegen.
 // ============================================================================
 

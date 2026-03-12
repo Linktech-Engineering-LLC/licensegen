@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-04
-// Modified: 2026-03-11
+// Modified: 2026-03-12
 // Description: 
 // ============================================================================
 use serde::Deserialize;
@@ -27,6 +27,7 @@ impl fmt::Display for VaultError {
 impl std::error::Error for VaultError {}
 #[derive(Debug)]
 pub enum VaultError {
+    Io(std::io::Error),
     ReadError(String),
     HeaderError,
     HexDecodeError(&'static str),
@@ -36,6 +37,12 @@ pub enum VaultError {
     Utf8Error,
     YamlError(String),
     HmacError,
+    PermissionError(String),
+}
+impl From<std::io::Error> for VaultError {
+    fn from(err: std::io::Error) -> Self {
+        VaultError::Io(err)
+    }
 }
 
 

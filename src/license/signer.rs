@@ -3,6 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-02
+// Modified: 2026-03-12
 // Description: Deterministic RSA signer for canonical license payloads.
 // ============================================================================
 use crate::license::types::{LicensePayload, SignedLicense};

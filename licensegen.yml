@@ -1,23 +1,32 @@
 vault:
+  # Environment variables take priority:
+  #   LICENSEGEN_VAULT
+  #   LICENSEGEN_VAULT_PASSWORD
+  #
+  # If these are not set, licensegen falls back to the paths below.
+
   file: ~/ansible/vault.yml
   password_file: ~/.ansible/password
 
-#paths:
-#  products_dir: data/products
-#  application_file: data/license.yml
-#  keypair_dir: data/keys
-#  output_dir: data/products
+  # NOTE: ansible-vault must be installed and available in PATH.
+
 
 paths:
-  # Root where all products live
-  products_dir: data/products
+  # Environment override:
+  #   LICENSEGEN_ROOT_DIR
+  #
+  # If set, licensegen uses that as the root.
+  # If not, it uses this value.
+  root_dir: data
 
-  # Under each product:
+  keypair_dir: keys
+  products_dir: products
+
   product_file: product.yml
+  editions_subdir: editions
 
-  # Under each product, where user license applications live:
-  applications_subdir: applications/user
+  edition_file: edition.yml
+  applications_subdir: applications
 
-  # Inside each user folder:
   application_file: application.yml
   license_file: license.json
