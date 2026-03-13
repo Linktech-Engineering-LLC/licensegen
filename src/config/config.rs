@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-19
-// Modified: 2026-03-12
+// Modified: 2026-03-13
 // Description: Configuration loader for licensegen.yml.
 // ============================================================================
 
@@ -59,6 +59,8 @@ pub struct PathsConfig {
 
     pub application_file: String,
     pub license_file: String,
+
+    pub output_dir: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

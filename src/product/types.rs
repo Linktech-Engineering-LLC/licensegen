@@ -3,7 +3,7 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-03-07
-// Modified: 2026-03-07
+// Modified: 2026-03-13
 // Description: Structures for Products, Editions, Requests, etc
 // ============================================================================
 
@@ -165,6 +165,12 @@ pub enum ProductError {
     ReadError(String),
     YamlError(String),
 }
+impl From<mysql_async::Error> for ProductError {
+    fn from(e: mysql_async::Error) -> Self {
+        ProductError::ReadError(format!("Database error: {}", e))
+    }
+}
+
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

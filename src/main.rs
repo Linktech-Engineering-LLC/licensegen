@@ -3,24 +3,23 @@
 // Author: Leon McClatchey
 // Company: Linktech Engineering LLC
 // Created: 2026-02-18
-// Modified: 2026-03-12
+// Modified: 2026-03-13
 // Description: Entry point for licensegen.
 // ============================================================================
 
 use std::path::{self, PathBuf, Path};
 
+use licensegen::config::loader::load_and_resolve;
 use licensegen::db::pool::init_pool;
 use licensegen::db::reader::{fetch_address, fetch_application};
-use licensegen::config::Config;
 use licensegen::license::generator::generate_license;
+use licensegen::product::ingest::ingest_all;
 use licensegen::product::loader::{load_all_editions, load_all_products, load_application};
 use licensegen::product::sync::{sync_application, sync_edition, sync_product};
 use licensegen::signing::loaders::load_keypair;
 use licensegen::signing::resolver::resolve_keypair_paths;
-use licensegen::util::helpers::{expand_tilde, resolve_path};
-use licensegen::vault::ansible::decrypt_with_ansible;
-use licensegen::vault::loader::load_vault;
-use licensegen::vault::types::{VaultError, VaultSecrets};
+use licensegen::util::helpers::resolve_path;
+use licensegen::vault::loader::load_secrets;
 
 use log::{debug, error, info};
 use logger::{end_banner, init, start_banner};
@@ -33,133 +32,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     start_banner();
 
     // Load configuration
-
+    let cfg = load_and_resolve()?;
     let cfg_path = PathBuf::from(format!("{}/licensegen.yml", env!("CARGO_MANIFEST_DIR")));
     let cfg_dir = cfg_path.parent().unwrap().to_path_buf();
-    let cfg = Config::load(&cfg_path)?;
     info!("Loaded configuration from {:?}", cfg_path);
     println!("Configuration contains: {:?}", cfg);
-    //std::process::exit(0);
 
     // Decrypt vault
-    //let vault_file = expand_tilde(&cfg.vault.file);
-    //let password_file = expand_tilde(&cfg.vault.password_file);
-    let (vault_file,password_file) = load_vault(&cfg, &cfg_dir)?;
-    let yaml_str = decrypt_with_ansible(&vault_file, &password_file)?;
-    info!("Vault decrypted successfully");
-    println!("vault and password files: {:?}, {:?}",vault_file, password_file);
-    std::process::exit(0);
-
-    let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
+    let secrets = load_secrets(&cfg)?;
     let app_key = env!("CARGO_PKG_NAME").to_lowercase();
+    info!("Vault secrets loaded from {}", app_key);
 
-    let subtree = yaml
-        .get(&app_key)
-        .ok_or_else(|| VaultError::YamlError(format!("Missing vault key '{}'", app_key)))?;
-
-    let secrets: VaultSecrets = serde_yaml::from_value(subtree.clone())
-        .map_err(|e| VaultError::YamlError(e.to_string()))?;
-    info!("Vault secrets loaded for {}", app_key);
     let pool = init_pool(&secrets).await?;
 
-    // Load all products
-    let prod_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&cfg.paths.products_dir);
-    info!("Loading products from {:?}", prod_path);
-
-    let products = load_all_products(prod_path.to_str().unwrap())?;
-    info!("Loaded {} products", products.len());
-
-    for p in &products {
-        info!("Product loaded: {}", p.name);
-
-        // Resolve keypair paths
-        let (private_path, public_path) =
-            resolve_keypair_paths(&p.signing.keypair, &cfg.paths.keypair_dir);
-
-        debug!("keypair: {:?} and {:?}", private_path, public_path);
-
-        // Load keypair
-        let (private_key, public_key) =
-            load_keypair(&private_path, &public_path).unwrap_or_else(|e| {
-                error!("Keypair missing or invalid: {}", e);
-                error!("Run `licensegen keygen` to create the keypair.");
-                std::process::exit(1);
-            });
-
-        // Load editions from filesystem
-        let edition_roots = match load_all_editions(&p.dir) {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to load editions for {}: {}", p.name, e);
-                std::process::exit(1);
-            }
-        };
-
-        // Sync product and get product_id
-        let (changed, product_id) = match sync_product(&pool, p).await {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to sync product {}: {}", p.name, e);
-                std::process::exit(1);
-            }
-        };
-
-        if changed {
-            info!("Product '{}' updated in database", p.name);
-        } else {
-            info!("Product '{}' unchanged", p.name);
-        }
-
-        // Sync editions
-        for (_code, root) in &edition_roots {
-            sync_edition(&pool, product_id, root).await?;
-        }
-    }
-    // ------------------------------------------------------------
-    // Load and sync application
-    // ------------------------------------------------------------
-
-    // Determine the application file path for this product
-    let app_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join(&cfg.paths.products_dir)
-        .join("BotScanner")
-        .join("application.yml");
-
-    info!("Loading application from {:?}", app_path);
-
-    // Sync application
-    let mut conn = pool.get_conn().await?;
-
-    let application = load_application(&mut conn, app_path.to_str().unwrap()).await?;
-    info!("Application loaded: {}", application.request.name);
-
-    let application_id = match sync_application(&mut conn, &application).await {
-        Ok(id) => id,
-        Err(e) => {
-            log::error!("Failed to sync application: {}", e);
-            return Err(e.into());
-        }
-    };
-
-    info!("Application synced with ID {}", application_id);
+    ingest_all(&cfg, &pool).await?;    
 
     // ------------------------------------------------------------
     // Generate and sync license
     // ------------------------------------------------------------
-    let mut conn = pool.get_conn().await?;
-    let app = fetch_application(&mut conn, application_id).await?;
-    println!("Fetched Application {:?}", app);
+    //let mut conn = pool.get_conn().await?;
+    //let app = fetch_application(&mut conn, application_id).await?;
+    //println!("Fetched Application {:?}", app);
     
-    let keypair_dir      = resolve_path(&cfg_dir, &cfg.paths.keypair_dir);
-    let output_dir       = resolve_path(&cfg_dir, &cfg.paths.applications_subdir);
+    //let keypair_dir      = resolve_path(&cfg_dir, &cfg.paths.keypair_dir);
+    //let output_dir       = resolve_path(&cfg_dir, &cfg.paths.applications_subdir);
 
-    let (license_id, license_path) = generate_license(
-        &mut conn,
-        application_id,
-        &keypair_dir,
-        &output_dir,
-    ).await?;
-    info!("License generated and synced with ID {}", license_id);
+    //let (license_id, license_path) = generate_license(
+    //    &mut conn,
+    //    application_id,
+    //    &keypair_dir,
+    //    &output_dir,
+    //).await?;
+    //info!("License generated and synced with ID {}", license_id);
 
     // End banner
     end_banner();
