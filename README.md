@@ -1,4 +1,8 @@
-# Licensegen (Under Construction)
+# licensegen — Deterministic License Generator (Rust)
+![Rust Version](https://img.shields.io/badge/rust-stable-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-under--construction-yellow)
+![Linktech](https://img.shields.io/badge/Linktech-licensegen-blueviolet)
 
 This repository contains the next-generation deterministic license generation engine for Linktech Engineering.
 
